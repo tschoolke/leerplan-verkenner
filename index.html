@@ -31,13 +31,14 @@
             z-index: 20;
             background-color: #1e293b;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            white-space: nowrap;
         }
 
         #mainTable {
-            min-width: 100%;
-            table-layout: auto;
+            width: 100%;
             border-collapse: separate;
             border-spacing: 0;
+            table-layout: auto;
         }
 
         td, th {
@@ -45,6 +46,9 @@
             vertical-align: top;
             text-align: left;
             border-right: 1px solid #e2e8f0;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            white-space: normal;
         }
 
         /* Extreem smalle eerste kolom voor doel-soort */
@@ -55,29 +59,43 @@
             text-align: center !important;
             padding-left: 2px !important;
             padding-right: 2px !important;
-            overflow: hidden;
-            text-overflow: clip;
         }
         
-        .col-code { width: 100px; min-width: 100px; }
-        .col-jaar { width: 70px; min-width: 70px; }
-        .col-text { min-width: 250px; }
+        .col-code { 
+            width: 100px; 
+            min-width: 100px; 
+        }
+
+        .col-jaar { 
+            width: 70px; 
+            min-width: 70px; 
+        }
+
+        /* Voorkom dat tekstkolommen de tabel te breed maken */
+        .col-text { 
+            min-width: 250px; 
+            max-width: 500px;
+        }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f1f5f9 !important; }
         
         .content-cell {
             line-height: 1.5;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-            white-space: normal;
         }
 
         .line-clamp-view {
             display: -webkit-box;
-            -webkit-line-clamp: 6;
+            -webkit-line-clamp: 8;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        /* Container voor horizontale scroll indien nodig */
+        #tableContainer {
+            width: 100%;
+            overflow-x: auto;
+            position: relative;
         }
 
         @media print {
@@ -98,12 +116,6 @@
                 min-width: 100% !important;
                 table-layout: auto !important;
                 font-size: 8pt !important;
-            }
-            .sticky-header th { 
-                background-color: #f8fafc !important; 
-                color: black !important; 
-                position: static !important; 
-                border-bottom: 2px solid black !important;
             }
         }
     </style>
@@ -264,7 +276,6 @@
                 const low = h.toLowerCase();
                 let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border-r border-slate-700';
                 
-                // Breedte logica per kolomtype
                 if (index === 0) cls += ' col-doelsoort';
                 else if (low.includes('code')) cls += ' col-code';
                 else if (low.includes('jaar') || low.includes('fase')) cls += ' col-jaar';
@@ -274,7 +285,7 @@
             }).join('');
         }
 
-        function renderFilters(currentFilteredData) {
+        function renderFilters() {
             const container = document.getElementById('filterContainer');
             
             container.innerHTML = filterColumns.map(col => {
@@ -340,7 +351,7 @@
                 return matchesSearch && matchesFilters;
             });
 
-            renderFilters(filtered);
+            renderFilters();
 
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
@@ -366,9 +377,9 @@
                             } else if (lowH.includes('jaar') || lowH.includes('fase')) {
                                 cls += ' col-jaar';
                             } else if (lowH.includes('leerplandoel')) {
-                                cls += ' font-semibold text-slate-800';
+                                cls += ' font-semibold text-slate-800 col-text';
                             } else if (lowH.includes('voorbeeld') || lowH.includes('toelichting')) {
-                                cls += ' text-slate-500 italic';
+                                cls += ' text-slate-500 italic col-text';
                                 content = `<div class="line-clamp-view">${val}</div>`;
                             }
                             return `<td class="${cls}">${content}</td>`;
