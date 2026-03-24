@@ -51,7 +51,7 @@
             white-space: normal;
         }
 
-        /* Extreem smalle eerste kolom voor doel-soort */
+        /* Scherm-specifieke kolominstellingen */
         .col-doelsoort { 
             width: 35px !important; 
             min-width: 35px !important; 
@@ -61,28 +61,14 @@
             padding-right: 2px !important;
         }
         
-        .col-code { 
-            width: 100px; 
-            min-width: 100px; 
-        }
-
-        .col-jaar { 
-            width: 70px; 
-            min-width: 70px; 
-        }
-
-        /* Voorkom dat tekstkolommen de tabel te breed maken */
-        .col-text { 
-            min-width: 250px; 
-            max-width: 500px;
-        }
+        .col-code { width: 100px; min-width: 100px; }
+        .col-jaar { width: 70px; min-width: 70px; }
+        .col-text { min-width: 200px; max-width: 500px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f1f5f9 !important; }
         
-        .content-cell {
-            line-height: 1.5;
-        }
+        .content-cell { line-height: 1.5; }
 
         .line-clamp-view {
             display: -webkit-box;
@@ -91,18 +77,38 @@
             overflow: hidden;
         }
 
-        /* Container voor horizontale scroll indien nodig */
         #tableContainer {
             width: 100%;
             overflow-x: auto;
             position: relative;
         }
 
+        /* PRINT OPTIMALISATIE */
         @media print {
-            @page { size: A4 landscape; margin: 1cm; }
-            body { background: white !important; overflow: visible !important; height: auto !important; }
-            aside, header, #welcomeMessage, .no-print, #resultCount, #emptyState { display: none !important; }
-            main { padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; width: 100% !important; }
+            @page { 
+                size: A4 landscape; 
+                margin: 0.5cm; 
+            }
+            
+            body { 
+                background: white !important; 
+                overflow: visible !important; 
+                height: auto !important; 
+                color: black !important;
+            }
+            
+            aside, header, #welcomeMessage, .no-print, #resultCount, #emptyState { 
+                display: none !important; 
+            }
+            
+            main { 
+                padding: 0 !important; 
+                margin: 0 !important; 
+                display: block !important; 
+                overflow: visible !important; 
+                width: 100% !important; 
+            }
+            
             #tableContainer { 
                 border: none !important; 
                 box-shadow: none !important; 
@@ -111,11 +117,41 @@
                 height: auto !important; 
                 width: 100% !important;
             }
+            
             #mainTable { 
                 width: 100% !important;
-                min-width: 100% !important;
-                table-layout: auto !important;
-                font-size: 8pt !important;
+                max-width: 100% !important;
+                table-layout: fixed !important; /* Forceer breedte binnen pagina */
+                font-size: 7pt !important;
+                border: 1px solid #000 !important;
+            }
+
+            .sticky-header th { 
+                background-color: #eee !important; 
+                color: black !important; 
+                position: static !important; 
+                border-bottom: 1px solid black !important;
+                font-weight: bold !important;
+                padding: 4px !important;
+            }
+
+            td { 
+                border: 1px solid #ddd !important; 
+                padding: 4px !important;
+                word-break: break-word !important;
+            }
+
+            /* Kolombreedtes voor print (totaal 100%) */
+            .col-doelsoort { width: 3% !important; min-width: 0 !important; }
+            .col-code { width: 8% !important; min-width: 0 !important; }
+            .col-jaar { width: 5% !important; min-width: 0 !important; }
+            /* De rest van de kolommen verdeelt de resterende 84% automatisch via de browser,
+               of we geven de tekstkolommen een groter aandeel */
+            .col-text { width: auto !important; max-width: none !important; }
+            
+            .line-clamp-view {
+                -webkit-line-clamp: unset !important; /* Toon volledige tekst bij print */
+                display: block !important;
             }
         }
     </style>
@@ -162,7 +198,7 @@
             
             <div class="flex items-center gap-2">
                 <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">0 records</div>
-                <button id="printBtn" onclick="window.print()" class="hidden bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
+                <button id="printBtn" onclick="window.print()" class="hidden bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all active:scale-95">
                     <i class="fas fa-print"></i> Printen
                 </button>
             </div>
