@@ -39,12 +39,12 @@
         .col-compact {
             white-space: nowrap;
             width: 1%;
-            min-width: 80px;
+            min-width: 100px;
         }
 
         .col-content {
-            min-width: 350px;
-            max-width: 600px;
+            min-width: 300px;
+            max-width: 500px;
             white-space: normal;
             word-wrap: break-word;
             vertical-align: top;
@@ -61,7 +61,6 @@
             background-color: #1e293b;
         }
 
-        /* Loading spinner */
         .loader {
             border: 3px solid #f3f3f3;
             border-top: 3px solid #3498db;
@@ -101,7 +100,6 @@
                     <i class="fas fa-columns"></i>
                 </button>
                 
-                <!-- Bestand selectie dropdown -->
                 <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-1 border border-slate-200">
                     <i class="fas fa-book-open text-slate-400 text-xs"></i>
                     <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent border-none text-sm font-semibold text-slate-700 outline-none pr-8 py-1.5 cursor-pointer">
@@ -131,7 +129,7 @@
                 <div class="flex items-center gap-3">
                     <label for="csvUpload" class="cursor-pointer bg-slate-600 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
                         <i class="fas fa-plus"></i>
-                        <span>Nieuw</span>
+                        <span>Upload</span>
                     </label>
                     <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
                 </div>
@@ -147,8 +145,8 @@
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-rocket text-blue-500 text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Klaar voor gebruik</h2>
-                <p class="text-slate-500 mb-6">Selecteer hierboven het leerplan <b>Nederlands</b> of <b>Wiskunde</b> om de data direct in te laden van GitHub.</p>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Welkom bij de Verkenner</h2>
+                <p class="text-slate-500 mb-6">Selecteer een leerplan uit de lijst of upload een eigen CSV-bestand om te filteren.</p>
             </div>
 
             <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -164,62 +162,55 @@
 
             <div id="emptyState" class="hidden text-center py-24 bg-white rounded-2xl border border-slate-200">
                 <i class="fas fa-filter text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-800">Geen matches</h3>
-                <p class="text-slate-400 mt-2">Pas je filters aan of verander van bestand.</p>
+                <h3 class="text-xl font-bold text-slate-800">Geen resultaten</h3>
+                <p class="text-slate-400 mt-2">Probeer een andere zoekterm of filter.</p>
             </div>
         </div>
     </main>
 
     <script>
         let fileLibrary = {}; 
-        let currentFileId = null;
-        
         let rawData = [];
         let allHeaders = [];
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
 
+        // Functie om headers schoon te maken (verwijder quotes en witruimte)
         function cleanHeader(h) {
             if (!h) return "";
             return h.replace(/["\r\n]+/g, ' ').trim();
         }
 
+        // CSV Parser die rekening houdt met quotes en verschillende scheidingstekens
         function parseCSVAuto(text) {
-            const firstLine = text.split('\n')[0];
+            const lines = text.split(/\r?\n/);
+            if (lines.length === 0) return [];
+            
+            // Detecteer scheidingsteken op basis van de eerste regel
+            const firstLine = lines[0];
             const delimiter = firstLine.includes(';') ? ';' : ',';
             
             const rows = [];
-            let row = [];
-            let field = "";
-            let inQuotes = false;
-
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                const nextChar = text[i + 1];
-
-                if (char === '"') {
-                    if (inQuotes && nextChar === '"') {
-                        field += '"';
-                        i++;
-                    } else {
+            for (let line of lines) {
+                if (!line.trim()) continue;
+                
+                const row = [];
+                let field = "";
+                let inQuotes = false;
+                
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
                         inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        row.push(field.trim());
+                        field = "";
+                    } else {
+                        field += char;
                     }
-                } else if (char === delimiter && !inQuotes) {
-                    row.push(field);
-                    field = "";
-                } else if ((char === '\r' || char === '\n') && !inQuotes) {
-                    if (char === '\r' && nextChar === '\n') i++;
-                    row.push(field);
-                    if (row.length > 1 || (row.length === 1 && row[0] !== "")) rows.push(row);
-                    row = [];
-                    field = "";
-                } else {
-                    field += char;
                 }
-            }
-            if (row.length > 0 || field !== "") {
-                row.push(field);
+                row.push(field.trim());
                 rows.push(row);
             }
             return rows;
@@ -237,25 +228,24 @@
             if (!val) {
                 document.getElementById('welcomeMessage').classList.remove('hidden');
                 document.getElementById('tableWrapper').classList.add('hidden');
+                document.getElementById('emptyState').classList.add('hidden');
                 return;
             }
 
-            // Als we de data al hebben, direct laden
             if (fileLibrary[val]) {
                 applyFileData(fileLibrary[val]);
                 return;
             }
 
-            // Anders ophalen van de URL
             toggleLoading(true);
             try {
                 const response = await fetch(val);
-                if (!response.ok) throw new Error("Bestand kon niet worden opgehaald.");
+                if (!response.ok) throw new Error("Netwerk error");
                 const text = await response.text();
                 processCSVData(text, val);
             } catch (error) {
-                console.error(error);
-                alert("Er ging iets mis bij het ophalen van het leerplan.");
+                console.error("Fetch error:", error);
+                alert("Kon het leerplan niet laden. Controleer of het bestand op GitHub staat en de link 'Raw' is.");
             } finally {
                 toggleLoading(false);
             }
@@ -263,26 +253,38 @@
 
         function processCSVData(text, fileId) {
             const rows = parseCSVAuto(text);
-            if (rows.length < 1) return;
+            if (rows.length < 2) {
+                alert("Het bestand lijkt leeg of ongeldig.");
+                return;
+            }
 
             const headers = rows[0].map(h => cleanHeader(h));
-            const processedRows = rows.slice(1).map(rowValues => {
+            const dataRows = rows.slice(1).map(rowValues => {
                 const obj = {};
                 headers.forEach((header, index) => {
-                    obj[header] = rowValues[index] ? rowValues[index].trim() : "";
+                    obj[header] = rowValues[index] || "";
                 });
                 return obj;
             });
 
-            fileLibrary[fileId] = { headers, rows: processedRows };
+            fileLibrary[fileId] = { headers, rows: dataRows };
             applyFileData(fileLibrary[fileId]);
         }
 
         function applyFileData(data) {
             allHeaders = data.headers;
             rawData = data.rows;
-            filterColumns = allHeaders.slice(0, 9);
+            
+            // Bepaal welke kolommen als filter dienen (meestal de eerste paar metadata kolommen)
+            // We skippen kolommen die waarschijnlijk lange tekst bevatten zoals 'Leerplandoel'
+            const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst'];
+            filterColumns = allHeaders.filter(h => 
+                !skipKeywords.some(key => h.toLowerCase().includes(key))
+            ).slice(0, 8); // Maximaal 8 filters voor overzicht
+            
             activeFilters = {};
+            searchTerm = '';
+            document.getElementById('searchInput').value = '';
             
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
@@ -300,7 +302,6 @@
             reader.onload = function(e) {
                 processCSVData(e.target.result, file.name);
                 
-                // Voeg toe aan dropdown
                 const selector = document.getElementById('fileSelector');
                 if (![...selector.options].some(opt => opt.value === file.name)) {
                     const opt = document.createElement('option');
@@ -320,9 +321,9 @@
         function setupTableHeaders() {
             const headerRow = document.getElementById('tableHeaderRow');
             headerRow.innerHTML = allHeaders.map((h, index) => {
-                const isCompact = index < 9;
+                const isFilterCol = filterColumns.includes(h);
                 return `
-                    <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isCompact ? 'col-compact bg-slate-900' : 'col-content'}">
+                    <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isFilterCol ? 'col-compact bg-slate-900' : 'col-content'}">
                         ${h}
                     </th>
                 `;
@@ -427,9 +428,9 @@
                     <tr class="hover:bg-blue-50/40 transition-colors">
                         ${allHeaders.map((h, i) => {
                             const val = item[h] || '-';
-                            const isCompact = i < 9;
+                            const isFilterCol = filterColumns.includes(h);
                             return `
-                                <td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isCompact ? 'col-compact bg-slate-50/30 text-slate-900 font-medium' : 'col-content'}">
+                                <td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isFilterCol ? 'col-compact bg-slate-50/30 text-slate-900 font-medium' : 'col-content'}">
                                     ${val}
                                 </td>
                             `;
