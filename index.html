@@ -39,28 +39,35 @@
             top: 0;
             z-index: 20;
             background-color: #1e293b;
-            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Tabel cellen styling */
-        td {
+        /* Tabel Breedte & Scroll */
+        #mainTable {
+            min-width: 1400px; /* Zorgt dat kolommen niet worden samengeperst */
+            table-layout: fixed; /* Geeft ons controle over de breedte van de kolommen */
+        }
+
+        td, th {
+            padding: 1rem 1.5rem;
             vertical-align: top;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            min-width: 150px; /* Basisbreedte voor kolommen */
+            white-space: normal; /* Forceert tekst naar de volgende regel */
         }
 
-        /* Specifieke breedtes voor belangrijke kolommen */
-        .col-code { width: 130px; min-width: 130px; }
-        .col-fase { width: 90px; min-width: 90px; }
-        .col-wide { min-width: 400px; width: 500px; } /* Voor doelen en extra info */
+        /* Kolom breedte definities */
+        .w-small { width: 100px; }
+        .w-medium { width: 180px; }
+        .w-large { width: 450px; } /* Voor leerplandoelen */
+        .w-extra { width: 400px; } /* Voor voorbeelden en toelichting */
 
         tr:nth-child(even) {
             background-color: #f8fafc;
         }
 
         tr:hover {
-            background-color: #eff6ff !important;
+            background-color: #f1f5f9 !important;
         }
     </style>
 </head>
@@ -79,7 +86,7 @@
         
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
             <div class="text-center py-10 text-slate-400 italic text-sm">
-                Selecteer eerst een leerplan...
+                Laden...
             </div>
         </div>
     </aside>
@@ -108,14 +115,14 @@
                         type="text" 
                         id="searchInput"
                         oninput="handleSearch()"
-                        placeholder="Zoek in alle kolommen..."
-                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all shadow-sm"
+                        placeholder="Zoek in alle velden..."
+                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
                     >
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl whitespace-nowrap shadow-sm">
-                    0 resultaten
+                <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl">
+                    0 records
                 </div>
             </div>
         </header>
@@ -123,16 +130,14 @@
         <!-- Tabel Sectie -->
         <div class="flex-1 overflow-hidden flex flex-col p-4">
             <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
-                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-                    <i class="fas fa-table"></i>
-                </div>
-                <h2 class="text-xl font-bold text-slate-800">Klaar om te verkennen?</h2>
-                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een bestand om de volledige inhoud en filters te laden.</p>
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">!</div>
+                <h2 class="text-xl font-bold text-slate-800">Selecteer een Leerplan</h2>
+                <p class="text-slate-500 text-sm mt-2">Kies hierboven een bestand om de records te bekijken.</p>
             </div>
 
-            <!-- Scrollbare container voor de tabel -->
+            <!-- Scrollbare container -->
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
-                <table class="w-full text-left border-collapse table-auto" id="mainTable">
+                <table id="mainTable">
                     <thead>
                         <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
                     </thead>
@@ -141,9 +146,8 @@
             </div>
 
             <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
-                <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-700">Geen resultaten gevonden</h3>
-                <p class="text-slate-400 mt-1">Verander je zoekterm of deactiveer enkele filters.</p>
+                <h3 class="text-xl font-bold text-slate-700">Geen resultaten</h3>
+                <p class="text-slate-400 mt-1">Pas je filters of zoekterm aan.</p>
             </div>
         </div>
     </main>
@@ -163,7 +167,6 @@
 
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
-            // We verbergen enkel de absolute ruwe codes die dubbelop zijn met de filters
             return ['lfmd', 'nrmd', 'md'].includes(clean);
         }
 
@@ -215,19 +218,14 @@
             if (rows.length < 2) return;
             
             allHeaders = rows[0].map(h => cleanHeader(h));
-            
             rawData = rows.slice(1).map(row => {
                 const obj = {};
-                allHeaders.forEach((h, i) => {
-                    obj[h] = row[i] || "";
-                });
+                allHeaders.forEach((h, i) => { obj[h] = row[i] || ""; });
                 return obj;
             });
 
-            // Toon ALLE kolommen behalve technische ID's
             visibleHeaders = allHeaders.filter(h => h !== "" && !isTechnicalHeader(h));
 
-            // Bepaal welke kolommen als filters in de zijbalk komen
             const desiredFilters = ['doel-soort', 'jaar/fase', 'domein', 'subdomein', 'cluster', 'code'];
             filterColumns = allHeaders.filter(h => {
                 const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
@@ -247,13 +245,14 @@
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = visibleHeaders.map(h => {
                 const lower = h.toLowerCase();
-                let cls = 'px-6 py-4 text-[11px] font-bold uppercase tracking-wider border-r border-slate-700 whitespace-nowrap ';
+                let cls = '';
                 
-                if (lower.includes('code')) cls += 'col-code';
-                else if (lower.includes('jaar')) cls += 'col-fase';
-                else if (lower.includes('doel') || lower.includes('voorbeelden') || lower.includes('toelichting')) cls += 'col-wide';
-                
-                return `<th class="${cls}">${h}</th>`;
+                if (lower.includes('code') || lower.includes('jaar')) cls = 'w-small';
+                else if (lower.includes('doel')) cls = 'w-large';
+                else if (lower.includes('voorbeeld') || lower.includes('toelichting') || lower.includes('woordenschat')) cls = 'w-extra';
+                else cls = 'w-medium';
+
+                return `<th class="${cls} text-[10px] font-black uppercase tracking-widest">${h}</th>`;
             }).join('');
         }
 
@@ -262,19 +261,19 @@
             container.innerHTML = filterColumns.map(col => {
                 const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "" && v !== "-" && v !== "undefined")
-                    .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+                    .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
                 if (values.length === 0) return '';
 
                 return `
-                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
-                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${col}</h3>
-                        <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${col}</h3>
+                        <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
                             ${values.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-3 py-1.5 text-[11px] border rounded-xl transition-all font-semibold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'}">
+                                        class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-medium ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400'}">
                                         ${v}
                                     </button>
                                 `;
@@ -320,22 +319,16 @@
                 document.getElementById('tableContainer').classList.remove('hidden');
                 
                 tbody.innerHTML = filtered.map(item => `
-                    <tr class="transition-colors border-b border-slate-100">
+                    <tr>
                         ${visibleHeaders.map(h => {
                             const val = item[h] || '-';
                             const lowerH = h.toLowerCase();
+                            let style = '';
                             
-                            let content = `<div class="whitespace-pre-wrap leading-relaxed py-1">${val}</div>`;
-                            
-                            if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg border border-blue-200 font-mono font-bold text-[11px]">${val}</span>`;
-                            } else if (lowerH.includes('leerplandoel')) {
-                                content = `<div class="font-bold text-slate-900 leading-snug py-1">${val}</div>`;
-                            } else if (lowerH.includes('voorbeelden') || lowerH.includes('toelichting') || lowerH.includes('woordenschat')) {
-                                content = `<div class="text-slate-500 italic text-[12px] bg-slate-50/50 p-2 rounded-lg border border-slate-100">${val}</div>`;
-                            }
+                            if (lowerH.includes('leerplandoel')) style = 'font-bold text-slate-900';
+                            if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) style = 'text-slate-500 italic text-xs leading-relaxed bg-slate-50/30';
 
-                            return `<td class="px-6 py-5 border-r border-slate-50 last:border-0">${content}</td>`;
+                            return `<td class="${style}">${val}</td>`;
                         }).join('')}
                     </tr>
                 `).join('');
