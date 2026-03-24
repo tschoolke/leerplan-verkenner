@@ -14,16 +14,18 @@
             background-color: #f1f5f9;
         }
 
+        /* Verbeterde custom scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 10px;
+            height: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-            background: transparent;
+            background: #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 10px;
+            border-radius: 5px;
+            border: 2px solid #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
@@ -36,15 +38,15 @@
             box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
+        /* Kolom breedtes voor scherm */
         .col-compact {
             white-space: nowrap;
-            width: 1%;
-            min-width: 100px;
+            min-width: 120px;
         }
 
         .col-content {
-            min-width: 300px;
-            max-width: 500px;
+            min-width: 400px;
+            max-width: 600px;
             white-space: normal;
             word-wrap: break-word;
             vertical-align: top;
@@ -54,11 +56,54 @@
             background-color: #f8fafc;
         }
 
+        /* Sticky header fix */
         .sticky-header th {
             position: sticky;
             top: 0;
             z-index: 10;
             background-color: #1e293b;
+            box-shadow: 0 1px 0 0 #334155;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            aside, header, #loadingIndicator, .no-print {
+                display: none !important;
+            }
+            body, main, #mainContentScroll {
+                background: white !important;
+                overflow: visible !important;
+                height: auto !important;
+                display: block !important;
+            }
+            #tableWrapper {
+                border: none !important;
+                box-shadow: none !important;
+                display: block !important;
+                width: 100% !important;
+            }
+            table {
+                width: 100% !important;
+                table-layout: auto !important;
+                min-width: 0 !important;
+                border: 1px solid #ddd !important;
+            }
+            th {
+                background-color: #f1f5f9 !important;
+                color: black !important;
+                font-size: 8pt !important;
+                border: 1px solid #ddd !important;
+            }
+            td {
+                font-size: 8pt !important;
+                border: 1px solid #ddd !important;
+                page-break-inside: avoid;
+            }
+            .col-compact, .col-content {
+                min-width: 0 !important;
+                max-width: none !important;
+                width: auto !important;
+            }
         }
 
         .loader {
@@ -76,7 +121,7 @@
 <body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar voor Filters -->
-    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-lg shrink-0">
+    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-lg shrink-0 overflow-hidden no-print">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center shrink-0">
             <h2 class="font-bold flex items-center gap-2 text-sm tracking-widest uppercase">
                 <i class="fas fa-filter text-blue-400"></i> Slimme Filters
@@ -93,8 +138,9 @@
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-w-0 relative">
-        <header class="bg-white border-b border-slate-200 p-4 shadow-sm shrink-0">
+    <!-- Hoofdinhoud -->
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
+        <header class="bg-white border-b border-slate-200 p-4 shadow-sm shrink-0 z-10 no-print">
             <div class="max-w-full mx-auto flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-colors">
                     <i class="fas fa-columns"></i>
@@ -112,7 +158,6 @@
 
                 <div id="loadingIndicator" class="hidden">
                     <div class="loader mr-2"></div>
-                    <span class="text-xs text-slate-400 font-medium italic">Laden...</span>
                 </div>
 
                 <div class="relative flex-1">
@@ -127,20 +172,25 @@
                 </div>
 
                 <div class="flex items-center gap-3">
+                    <button onclick="window.print()" id="printBtn" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
+                        <i class="fas fa-print"></i>
+                        <span class="hidden md:inline">Print Selectie</span>
+                    </button>
                     <label for="csvUpload" class="cursor-pointer bg-slate-600 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
                         <i class="fas fa-plus"></i>
-                        <span>Upload</span>
+                        <span class="hidden md:inline">Upload</span>
                     </label>
                     <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
                 </div>
 
-                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2.5 rounded-xl">
+                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2.5 rounded-xl whitespace-nowrap">
                     0 resultaten
                 </div>
             </div>
         </header>
 
-        <div class="flex-1 overflow-auto p-4 custom-scrollbar bg-slate-100/50">
+        <!-- Tabel Container -->
+        <div class="flex-1 overflow-auto p-4 custom-scrollbar" id="mainContentScroll">
             <div id="welcomeMessage" class="max-w-3xl mx-auto mt-10 bg-white border border-slate-200 p-12 rounded-3xl text-center shadow-sm">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
                     <i class="fas fa-rocket text-blue-500 text-3xl"></i>
@@ -149,18 +199,16 @@
                 <p class="text-slate-500 mb-6">Selecteer een leerplan uit de lijst of upload een eigen CSV-bestand om te filteren.</p>
             </div>
 
-            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse table-auto">
-                        <thead id="tableHead">
-                            <tr class="bg-slate-800 text-white sticky-header" id="tableHeaderRow"></tr>
-                        </thead>
-                        <tbody id="tableBody" class="divide-y divide-slate-200 text-[13px] text-slate-600"></tbody>
-                    </table>
-                </div>
+            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 min-w-full inline-block align-top">
+                <table class="w-full text-left border-collapse table-fixed min-w-[1200px]" id="mainTable">
+                    <thead id="tableHead">
+                        <tr class="bg-slate-800 text-white sticky-header" id="tableHeaderRow"></tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-200 text-[13px] text-slate-600"></tbody>
+                </table>
             </div>
 
-            <div id="emptyState" class="hidden text-center py-24 bg-white rounded-2xl border border-slate-200">
+            <div id="emptyState" class="hidden text-center py-24 bg-white rounded-2xl border border-slate-200 w-full">
                 <i class="fas fa-filter text-slate-200 text-6xl mb-4"></i>
                 <h3 class="text-xl font-bold text-slate-800">Geen resultaten</h3>
                 <p class="text-slate-400 mt-2">Probeer een andere zoekterm of filter.</p>
@@ -176,18 +224,15 @@
         let activeFilters = {};
         let searchTerm = '';
 
-        // Functie om headers schoon te maken (verwijder quotes en witruimte)
         function cleanHeader(h) {
             if (!h) return "";
             return h.replace(/["\r\n]+/g, ' ').trim();
         }
 
-        // CSV Parser die rekening houdt met quotes en verschillende scheidingstekens
         function parseCSVAuto(text) {
             const lines = text.split(/\r?\n/);
             if (lines.length === 0) return [];
             
-            // Detecteer scheidingsteken op basis van de eerste regel
             const firstLine = lines[0];
             const delimiter = firstLine.includes(';') ? ';' : ',';
             
@@ -201,14 +246,11 @@
                 
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === delimiter && !inQuotes) {
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === delimiter && !inQuotes) {
                         row.push(field.trim());
                         field = "";
-                    } else {
-                        field += char;
-                    }
+                    } else field += char;
                 }
                 row.push(field.trim());
                 rows.push(row);
@@ -219,23 +261,16 @@
         async function handleFileSelection() {
             const selector = document.getElementById('fileSelector');
             const val = selector.value;
-
-            if (val === "local") {
-                document.getElementById('csvUpload').click();
-                return;
-            }
-
+            if (val === "local") { document.getElementById('csvUpload').click(); return; }
             if (!val) {
                 document.getElementById('welcomeMessage').classList.remove('hidden');
                 document.getElementById('tableWrapper').classList.add('hidden');
                 document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('printBtn').classList.add('hidden');
                 return;
             }
 
-            if (fileLibrary[val]) {
-                applyFileData(fileLibrary[val]);
-                return;
-            }
+            if (fileLibrary[val]) { applyFileData(fileLibrary[val]); return; }
 
             toggleLoading(true);
             try {
@@ -245,19 +280,13 @@
                 processCSVData(text, val);
             } catch (error) {
                 console.error("Fetch error:", error);
-                alert("Kon het leerplan niet laden. Controleer of het bestand op GitHub staat en de link 'Raw' is.");
-            } finally {
-                toggleLoading(false);
-            }
+                alert("Kon het leerplan niet laden.");
+            } finally { toggleLoading(false); }
         }
 
         function processCSVData(text, fileId) {
             const rows = parseCSVAuto(text);
-            if (rows.length < 2) {
-                alert("Het bestand lijkt leeg of ongeldig.");
-                return;
-            }
-
+            if (rows.length < 2) return;
             const headers = rows[0].map(h => cleanHeader(h));
             const dataRows = rows.slice(1).map(rowValues => {
                 const obj = {};
@@ -266,7 +295,6 @@
                 });
                 return obj;
             });
-
             fileLibrary[fileId] = { headers, rows: dataRows };
             applyFileData(fileLibrary[fileId]);
         }
@@ -274,21 +302,14 @@
         function applyFileData(data) {
             allHeaders = data.headers;
             rawData = data.rows;
-            
-            // Bepaal welke kolommen als filter dienen (meestal de eerste paar metadata kolommen)
-            // We skippen kolommen die waarschijnlijk lange tekst bevatten zoals 'Leerplandoel'
-            const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst'];
-            filterColumns = allHeaders.filter(h => 
-                !skipKeywords.some(key => h.toLowerCase().includes(key))
-            ).slice(0, 8); // Maximaal 8 filters voor overzicht
-            
+            const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
+            filterColumns = allHeaders.filter(h => !skipKeywords.some(key => h.toLowerCase().includes(key))).slice(0, 8);
             activeFilters = {};
             searchTerm = '';
             document.getElementById('searchInput').value = '';
-            
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
-            
+            document.getElementById('printBtn').classList.remove('hidden');
             setupTableHeaders();
             renderFilters();
             renderTable();
@@ -297,11 +318,9 @@
         function handleFileUpload(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 processCSVData(e.target.result, file.name);
-                
                 const selector = document.getElementById('fileSelector');
                 if (![...selector.options].some(opt => opt.value === file.name)) {
                     const opt = document.createElement('option');
@@ -320,10 +339,11 @@
 
         function setupTableHeaders() {
             const headerRow = document.getElementById('tableHeaderRow');
-            headerRow.innerHTML = allHeaders.map((h, index) => {
+            headerRow.innerHTML = allHeaders.map(h => {
                 const isFilterCol = filterColumns.includes(h);
+                const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
                 return `
-                    <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isFilterCol ? 'col-compact bg-slate-900' : 'col-content'}">
+                    <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isFilterCol ? 'col-compact bg-slate-900' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">
                         ${h}
                     </th>
                 `;
@@ -343,12 +363,10 @@
         function renderFilters() {
             const container = document.getElementById('filterContainer');
             container.innerHTML = '';
-
             filterColumns.forEach(col => {
                 const allUniqueValues = [...new Set(rawData.map(item => String(item[col]).trim()))]
                     .filter(val => val !== "" && val !== "undefined" && val !== "null")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-                
                 const availableValues = getAvailableOptions(col);
                 if (allUniqueValues.length === 0) return;
 
@@ -358,14 +376,11 @@
                     <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${col}</h3>
                     <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                         ${allUniqueValues.map(val => {
-                            const isAvailable = availableValues.includes(val);
                             const isActive = isFilterActive(col, val);
-                            if (!isAvailable && !isActive) return '';
+                            if (!availableValues.includes(val) && !isActive) return '';
                             return `
-                                <button 
-                                    onclick="toggleFilter('${col}', '${val}')"
-                                    class="filter-chip px-2.5 py-1 text-[10px] rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 transition-all font-medium ${isActive ? 'active' : ''}"
-                                >
+                                <button onclick="toggleFilter('${col}', '${val}')"
+                                    class="filter-chip px-2.5 py-1 text-[10px] rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 transition-all font-medium ${isActive ? 'active' : ''}">
                                     ${val}
                                 </button>
                             `;
@@ -376,9 +391,7 @@
             });
         }
 
-        function isFilterActive(col, val) {
-            return activeFilters[col] && activeFilters[col].includes(val);
-        }
+        function isFilterActive(col, val) { return activeFilters[col] && activeFilters[col].includes(val); }
 
         function toggleFilter(col, val) {
             if (!activeFilters[col]) activeFilters[col] = [];
@@ -404,12 +417,8 @@
 
         function renderTable() {
             const tbody = document.getElementById('tableBody');
-            const emptyState = document.getElementById('emptyState');
-            
             const filtered = rawData.filter(item => {
-                const matchesSearch = Object.values(item).some(val => 
-                    String(val).toLowerCase().includes(searchTerm)
-                );
+                const matchesSearch = Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm));
                 const matchesFilters = Object.entries(activeFilters).every(([col, values]) => {
                     if (!values || values.length === 0) return true;
                     return values.includes(String(item[col]).trim());
@@ -418,22 +427,20 @@
             });
 
             document.getElementById('resultCount').textContent = `${filtered.length} resultaten`;
-
             if (filtered.length === 0 && rawData.length > 0) {
                 tbody.innerHTML = '';
-                emptyState.classList.remove('hidden');
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('tableWrapper').classList.add('hidden');
             } else {
-                emptyState.classList.add('hidden');
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('tableWrapper').classList.remove('hidden');
                 tbody.innerHTML = filtered.map(item => `
-                    <tr class="hover:bg-blue-50/40 transition-colors">
-                        ${allHeaders.map((h, i) => {
+                    <tr>
+                        ${allHeaders.map(h => {
                             const val = item[h] || '-';
                             const isFilterCol = filterColumns.includes(h);
-                            return `
-                                <td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isFilterCol ? 'col-compact bg-slate-50/30 text-slate-900 font-medium' : 'col-content'}">
-                                    ${val}
-                                </td>
-                            `;
+                            const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
+                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isFilterCol ? 'col-compact bg-slate-50/10 font-semibold' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">${val}</td>`;
                         }).join('')}
                     </tr>
                 `).join('');
