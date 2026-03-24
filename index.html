@@ -34,59 +34,80 @@
             white-space: nowrap;
         }
 
-        /* Verbeterde Tabel Layout */
         #mainTable {
-            min-width: 1400px; /* lets meer ruimte voor brede kolommen */
-            table-layout: auto; /* auto ipv fixed voor betere tekstverdeling */
+            min-width: 1200px;
+            table-layout: auto;
             width: 100%;
             border-collapse: separate;
             border-spacing: 0;
         }
 
         td, th {
-            padding: 1.25rem;
+            padding: 1rem;
             vertical-align: top;
             text-align: left;
             border-right: 1px solid #f1f5f9;
         }
 
-        /* Specifieke breedte-hints voor kolommen */
-        .col-code { width: 120px; min-width: 120px; }
-        .col-fase { width: 90px; min-width: 90px; }
-        .col-soort { width: 80px; min-width: 80px; }
-        .col-domein { width: 200px; min-width: 180px; }
-        .col-doel { min-width: 400px; width: auto; }
-        .col-extra { min-width: 350px; width: 400px; }
+        /* Specifieke breedtes voor de verkenner weergave */
+        .col-code { width: 110px; min-width: 110px; }
+        .col-doel { min-width: 350px; }
+        .col-extra { min-width: 300px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f0f7ff !important; }
         
-        /* Voorkom dat tekst te kort wordt afgebroken */
         .content-cell {
-            line-height: 1.6;
+            line-height: 1.5;
             word-wrap: break-word;
             overflow-wrap: break-word;
             white-space: normal;
         }
 
-        .line-clamp-6 {
+        /* Schermweergave afkappen om het compact te houden */
+        .line-clamp-view {
             display: -webkit-box;
-            -webkit-line-clamp: 8;
+            -webkit-line-clamp: 6;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
 
-        /* Print Styles */
+        /* Print Styles - Cruciaal voor volledige weergave */
         @media print {
-            @page { size: A4 landscape; margin: 1cm; }
+            @page { size: A4 landscape; margin: 0.8cm; }
             body { background: white !important; overflow: visible !important; height: auto !important; }
-            aside, header, #welcomeMessage, button, .no-print { display: none !important; }
+            aside, header, #welcomeMessage, button, .no-print, #resultCount { display: none !important; }
             main { padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; }
-            #tableContainer { border: none !important; box-shadow: none !important; overflow: visible !important; display: block !important; }
-            #mainTable { min-width: 100% !important; table-layout: auto !important; font-size: 9pt !important; }
-            .sticky-header th { background-color: #f1f5f9 !important; color: black !important; border-bottom: 2px solid #000 !important; position: static !important; }
-            tr { page-break-inside: avoid; }
-            .line-clamp-6 { display: block !important; -webkit-line-clamp: none !important; overflow: visible !important; }
+            #tableContainer { 
+                border: none !important; 
+                box-shadow: none !important; 
+                overflow: visible !important; 
+                display: block !important; 
+                height: auto !important; 
+            }
+            #mainTable { 
+                min-width: 100% !important; 
+                width: 100% !important;
+                table-layout: auto !important; 
+                font-size: 8pt !important; 
+                border: 1px solid #ddd !important;
+            }
+            .sticky-header th { 
+                background-color: #f1f5f9 !important; 
+                color: black !important; 
+                border-bottom: 2px solid #000 !important; 
+                position: static !important; 
+            }
+            td { 
+                border-bottom: 1px solid #eee !important; 
+                page-break-inside: avoid;
+            }
+            /* Verwijder de line-clamp bij printen zodat ALLES zichtbaar is */
+            .line-clamp-view { 
+                display: block !important; 
+                -webkit-line-clamp: none !important; 
+                overflow: visible !important; 
+            }
         }
     </style>
 </head>
@@ -151,7 +172,7 @@
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
                 <table id="mainTable">
                     <thead><tr id="tableHeaderRow" class="text-white sticky-header"></tr></thead>
-                    <tbody id="tableBody" class="text-[13px] text-slate-700 divide-y divide-slate-100"></tbody>
+                    <tbody id="tableBody" class="text-[12px] text-slate-700 divide-y divide-slate-100"></tbody>
                 </table>
             </div>
 
@@ -167,38 +188,27 @@
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
-        let currentFileName = '';
-
-        const FILTER_NAMES = ['soort', 'jaar', 'fase', 'domein', 'subdomein', 'cluster'];
 
         function parseCSV(text) {
             const rows = [];
             let row = [];
             let cell = '';
             let inQuotes = false;
-            
             const firstLine = text.split('\n')[0];
             const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
 
             for (let i = 0; i < text.length; i++) {
                 const char = text[i];
                 const nextChar = text[i+1];
-
-                if (char === '"' && inQuotes && nextChar === '"') {
-                    cell += '"'; i++;
-                } else if (char === '"') {
-                    inQuotes = !inQuotes;
-                } else if (char === delimiter && !inQuotes) {
-                    row.push(cell.trim());
-                    cell = '';
-                } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                if (char === '"' && inQuotes && nextChar === '"') { cell += '"'; i++; } 
+                else if (char === '"') { inQuotes = !inQuotes; } 
+                else if (char === delimiter && !inQuotes) { row.push(cell.trim()); cell = ''; } 
+                else if ((char === '\n' || char === '\r') && !inQuotes) {
                     if (char === '\r' && nextChar === '\n') i++;
                     row.push(cell.trim());
                     if (row.length > 0) rows.push(row);
                     row = []; cell = '';
-                } else {
-                    cell += char;
-                }
+                } else { cell += char; }
             }
             if (cell || row.length > 0) { row.push(cell.trim()); rows.push(row); }
             return rows;
@@ -209,8 +219,6 @@
             const val = selector.value;
             if (val === "local") { document.getElementById('csvUpload').click(); return; }
             if (!val) return resetUI();
-            
-            currentFileName = selector.options[selector.selectedIndex].text;
             try {
                 const res = await fetch(val);
                 const text = await res.text();
@@ -218,12 +226,11 @@
             } catch (e) { console.error(e); }
         }
 
-        function handleFileUpload(e) {
-            const file = e.target.files[0];
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
             if (!file) return;
-            currentFileName = file.name;
             const reader = new FileReader();
-            reader.onload = (ev) => processData(ev.target.result);
+            reader.onload = (e) => processData(e.target.result);
             reader.readAsText(file);
         }
 
@@ -232,18 +239,25 @@
             if (rows.length < 2) return;
             
             allHeaders = rows[0].map(h => h.replace(/["\r\n]+/g, ' ').trim());
-            
-            rawData = rows.slice(1)
-                .map(row => {
-                    const obj = {};
-                    allHeaders.forEach((h, i) => { obj[h] = row[i] || ""; });
-                    return obj;
-                })
-                .filter(item => Object.values(item).some(v => v !== ""));
+            rawData = rows.slice(1).map(row => {
+                const obj = {};
+                allHeaders.forEach((h, i) => { obj[h] = row[i] || ""; });
+                return obj;
+            }).filter(item => Object.values(item).some(v => v !== ""));
 
+            // DYNAMISCHE FILTER SELECTIE
+            // We kiezen alle kolommen behalve de kolommen die meestal lange, unieke tekst bevatten
             filterColumns = allHeaders.filter(h => {
                 const lowerH = h.toLowerCase();
-                return FILTER_NAMES.some(f => lowerH.includes(f));
+                // Sla kolommen over die specifiek geen filter mogen zijn
+                if (lowerH.includes('doel') && !lowerH.includes('soort')) return false;
+                if (lowerH.includes('toelichting') || lowerH.includes('voorbeeld') || lowerH.includes('coherentie')) return false;
+                
+                // Controleer of de kolom niet te veel unieke waarden heeft (zoals een unieke Code)
+                const uniqueVals = new Set(rawData.map(d => String(d[h]).trim())).size;
+                if (uniqueVals > (rawData.length * 0.8) && uniqueVals > 20) return false; 
+
+                return true;
             });
 
             activeFilters = {};
@@ -259,36 +273,23 @@
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = allHeaders.map(h => {
                 const lower = h.toLowerCase();
-                let colClass = 'col-domein';
+                let colClass = '';
                 if (lower.includes('code')) colClass = 'col-code';
-                else if (lower.includes('jaar') || lower.includes('fase')) colClass = 'col-fase';
-                else if (lower.includes('soort')) colClass = 'col-soort';
                 else if (lower.includes('doel')) colClass = 'col-doel';
-                else if (lower.includes('voorbeeld') || lower.includes('toelichting') || lower.includes('coherentie')) colClass = 'col-extra';
+                else if (lower.includes('voorbeeld') || lower.includes('toelichting')) colClass = 'col-extra';
                 
                 return `<th class="${colClass} text-[10px] font-bold uppercase tracking-widest text-slate-300 border-r border-slate-700">${h}</th>`;
             }).join('');
-        }
-
-        function getFilteredData(dataToFilter, filters, search) {
-            return dataToFilter.filter(item => {
-                const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(search));
-                const matchesFilters = Object.entries(filters).every(([col, vals]) => {
-                    if (!vals || vals.length === 0) return true;
-                    return vals.includes(String(item[col]).trim());
-                });
-                return matchesSearch && matchesFilters;
-            });
         }
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
             container.innerHTML = filterColumns.map(col => {
                 const availableValues = [...new Set(rawData.map(d => String(d[col]).trim()))]
-                    .filter(v => v && v !== "-" && v.length < 100)
+                    .filter(v => v && v !== "-")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
-                if (availableValues.length === 0) return '';
+                if (availableValues.length === 0 || availableValues.length > 50) return '';
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
@@ -328,7 +329,15 @@
         }
 
         function renderTable() {
-            const filtered = getFilteredData(rawData, activeFilters, searchTerm);
+            const filtered = rawData.filter(item => {
+                const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
+                const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => {
+                    if (!vals || vals.length === 0) return true;
+                    return vals.includes(String(item[col]).trim());
+                });
+                return matchesSearch && matchesFilters;
+            });
+
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
             
@@ -340,7 +349,7 @@
                 document.getElementById('tableContainer').classList.remove('hidden');
                 
                 tbody.innerHTML = filtered.map(item => `
-                    <tr class="transition-colors">
+                    <tr>
                         ${allHeaders.map(h => {
                             const val = item[h] || '';
                             const lowerH = h.toLowerCase();
@@ -348,12 +357,12 @@
                             let style = 'content-cell';
                             
                             if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-mono text-[11px] font-bold">${val}</span>`;
+                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-mono text-[10px] font-bold">${val}</span>`;
                             } else if (lowerH.includes('doel')) {
-                                style += ' font-semibold text-slate-800 text-[14px]';
+                                style += ' font-semibold text-slate-800 text-[13px]';
                             } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
-                                style += ' text-slate-500 text-[12px] italic';
-                                content = `<div class="line-clamp-6">${val}</div>`;
+                                style += ' text-slate-500 text-[11px] italic';
+                                content = `<div class="line-clamp-view">${val}</div>`;
                             }
                             return `<td class="${style}">${content}</td>`;
                         }).join('')}
