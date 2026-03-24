@@ -41,16 +41,27 @@
         }
 
         td, th {
-            padding: 0.75rem 1rem;
+            padding: 0.75rem 0.5rem;
             vertical-align: top;
             text-align: left;
             border-right: 1px solid #e2e8f0;
         }
 
-        /* Specifieke kolombreedtes */
-        .col-doelsoort { width: 45px; min-width: 45px; text-align: center; }
-        .col-code { width: 110px; min-width: 110px; }
-        .col-text { min-width: 300px; }
+        /* Extreem smalle eerste kolom voor doel-soort */
+        .col-doelsoort { 
+            width: 35px !important; 
+            min-width: 35px !important; 
+            max-width: 40px !important;
+            text-align: center !important;
+            padding-left: 2px !important;
+            padding-right: 2px !important;
+            overflow: hidden;
+            text-overflow: clip;
+        }
+        
+        .col-code { width: 100px; min-width: 100px; }
+        .col-jaar { width: 70px; min-width: 70px; }
+        .col-text { min-width: 250px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f1f5f9 !important; }
@@ -86,18 +97,13 @@
                 width: 100% !important;
                 min-width: 100% !important;
                 table-layout: auto !important;
-                font-size: 8.5pt !important;
+                font-size: 8pt !important;
             }
             .sticky-header th { 
                 background-color: #f8fafc !important; 
                 color: black !important; 
                 position: static !important; 
                 border-bottom: 2px solid black !important;
-                border-top: 1px solid black !important;
-            }
-            td { 
-                border-bottom: 0.5pt solid #ccc !important; 
-                page-break-inside: avoid;
             }
         }
     </style>
@@ -258,10 +264,11 @@
                 const low = h.toLowerCase();
                 let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border-r border-slate-700';
                 
-                // Eerste kolom is meestal doel-soort
+                // Breedte logica per kolomtype
                 if (index === 0) cls += ' col-doelsoort';
                 else if (low.includes('code')) cls += ' col-code';
-                else if (low.includes('doel') || low.includes('toelichting')) cls += ' col-text';
+                else if (low.includes('jaar') || low.includes('fase')) cls += ' col-jaar';
+                else if (low.includes('doel') || low.includes('toelichting') || low.includes('voorbeeld')) cls += ' col-text';
                 
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
@@ -271,7 +278,6 @@
             const container = document.getElementById('filterContainer');
             
             container.innerHTML = filterColumns.map(col => {
-                // Bereken beschikbare waarden op basis van OVERIGE filters
                 const dataToConsiderForThisFilter = rawData.filter(item => {
                     return Object.entries(activeFilters).every(([c, vals]) => {
                         if (c === col || !vals || vals.length === 0) return true;
@@ -295,7 +301,6 @@
                             ${allPossibleVals.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
                                 const isAvailable = availableVals.includes(v);
-                                
                                 if (!isAvailable && !isActive) return '';
 
                                 return `
@@ -316,7 +321,6 @@
             const idx = activeFilters[col].indexOf(val);
             if (idx > -1) activeFilters[col].splice(idx, 1);
             else activeFilters[col].push(val);
-            
             if (activeFilters[col].length === 0) delete activeFilters[col];
             renderTable();
         }
@@ -355,9 +359,12 @@
                             let content = val;
 
                             if (index === 0) {
-                                cls += ' col-doelsoort font-bold text-slate-400';
+                                cls += ' col-doelsoort font-bold text-slate-400 text-[11px]';
                             } else if (lowH.includes('code')) {
+                                cls += ' col-code';
                                 content = `<span class="font-mono font-bold text-blue-600 text-[10px] whitespace-nowrap">${val}</span>`;
+                            } else if (lowH.includes('jaar') || lowH.includes('fase')) {
+                                cls += ' col-jaar';
                             } else if (lowH.includes('leerplandoel')) {
                                 cls += ' font-semibold text-slate-800';
                             } else if (lowH.includes('voorbeeld') || lowH.includes('toelichting')) {
