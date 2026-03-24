@@ -47,7 +47,9 @@
             border-right: 1px solid #e2e8f0;
         }
 
-        .col-code { width: 120px; min-width: 120px; }
+        /* Specifieke kolombreedtes */
+        .col-doelsoort { width: 45px; min-width: 45px; text-align: center; }
+        .col-code { width: 110px; min-width: 110px; }
         .col-text { min-width: 300px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
@@ -96,12 +98,6 @@
             td { 
                 border-bottom: 0.5pt solid #ccc !important; 
                 page-break-inside: avoid;
-            }
-            .line-clamp-view { 
-                display: block !important; 
-                max-height: none !important;
-                -webkit-line-clamp: none !important; 
-                overflow: visible !important; 
             }
         }
     </style>
@@ -242,7 +238,7 @@
             filterColumns = allHeaders.filter(h => {
                 const lowH = h.toLowerCase();
                 if (excludeKeywords.some(k => lowH === k || lowH.includes(k))) return false;
-                const sample = rawData.slice(0, 20).map(d => String(d[h]).length);
+                const sample = rawData.slice(0, 50).map(d => String(d[h]).length);
                 const avgLength = sample.reduce((a, b) => a + b, 0) / (sample.length || 1);
                 return avgLength < 50;
             });
@@ -253,16 +249,20 @@
             document.getElementById('printBtn').classList.remove('hidden');
             
             setupTableHeader();
-            renderTable(); // Update table eerst, renderFilters wordt daarbinnen aangeroepen voor dynamiek
+            renderTable();
         }
 
         function setupTableHeader() {
             const hr = document.getElementById('tableHeaderRow');
-            hr.innerHTML = allHeaders.map(h => {
+            hr.innerHTML = allHeaders.map((h, index) => {
                 const low = h.toLowerCase();
                 let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border-r border-slate-700';
-                if (low.includes('code')) cls += ' col-code';
-                if (low.includes('doel') || low.includes('toelichting')) cls += ' col-text';
+                
+                // Eerste kolom is meestal doel-soort
+                if (index === 0) cls += ' col-doelsoort';
+                else if (low.includes('code')) cls += ' col-code';
+                else if (low.includes('doel') || low.includes('toelichting')) cls += ' col-text';
+                
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
@@ -271,27 +271,22 @@
             const container = document.getElementById('filterContainer');
             
             container.innerHTML = filterColumns.map(col => {
-                // Toon alleen waarden die voorkomen in de huidige gefilterde set
-                // MAAR: als er al een filter actief is op DEZE kolom, toon dan alle opties van die kolom
-                // die mogelijk zijn op basis van de OVERIGE filters (zodat je meerdere waarden kunt kiezen).
-                
-                const dataToConsider = Object.keys(activeFilters).length > 0 && !(activeFilters[col] && activeFilters[col].length > 0)
-                    ? currentFilteredData 
-                    : rawData.filter(item => {
-                        return Object.entries(activeFilters).every(([c, vals]) => {
-                            if (c === col || !vals || vals.length === 0) return true;
-                            return vals.includes(String(item[c]).trim());
-                        });
+                // Bereken beschikbare waarden op basis van OVERIGE filters
+                const dataToConsiderForThisFilter = rawData.filter(item => {
+                    return Object.entries(activeFilters).every(([c, vals]) => {
+                        if (c === col || !vals || vals.length === 0) return true;
+                        return vals.includes(String(item[c]).trim());
                     });
+                });
 
-                const availableVals = [...new Set(dataToConsider.map(d => String(d[col]).trim()))]
+                const availableVals = [...new Set(dataToConsiderForThisFilter.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "-" && v !== "undefined");
 
                 const allPossibleVals = [...new Set(rawData.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "-" && v !== "undefined")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
-                if (allPossibleVals.length === 0 || allPossibleVals.length > 60) return '';
+                if (allPossibleVals.length === 0 || allPossibleVals.length > 80) return '';
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
@@ -301,7 +296,6 @@
                                 const isActive = activeFilters[col]?.includes(v);
                                 const isAvailable = availableVals.includes(v);
                                 
-                                // Als de waarde niet beschikbaar is in de huidige set, verbergen we hem of maken we hem inactief
                                 if (!isAvailable && !isActive) return '';
 
                                 return `
@@ -323,9 +317,7 @@
             if (idx > -1) activeFilters[col].splice(idx, 1);
             else activeFilters[col].push(val);
             
-            // Als een categorie leeg is, verwijder de key
             if (activeFilters[col].length === 0) delete activeFilters[col];
-            
             renderTable();
         }
 
@@ -344,7 +336,6 @@
                 return matchesSearch && matchesFilters;
             });
 
-            // Update filters op basis van deze nieuwe set
             renderFilters(filtered);
 
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
@@ -357,13 +348,15 @@
                 document.getElementById('emptyState').classList.add('hidden');
                 tbody.innerHTML = filtered.map(item => `
                     <tr class="border-b border-slate-100">
-                        ${allHeaders.map(h => {
+                        ${allHeaders.map((h, index) => {
                             let val = item[h] || '';
                             const lowH = h.toLowerCase();
                             let cls = 'content-cell';
                             let content = val;
 
-                            if (lowH.includes('code')) {
+                            if (index === 0) {
+                                cls += ' col-doelsoort font-bold text-slate-400';
+                            } else if (lowH.includes('code')) {
                                 content = `<span class="font-mono font-bold text-blue-600 text-[10px] whitespace-nowrap">${val}</span>`;
                             } else if (lowH.includes('leerplandoel')) {
                                 cls += ' font-semibold text-slate-800';
