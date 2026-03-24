@@ -14,7 +14,6 @@
             background-color: #f1f5f9;
         }
 
-        /* Verbeterde custom scrollbar */
         .custom-scrollbar::-webkit-scrollbar {
             width: 10px;
             height: 10px;
@@ -38,7 +37,6 @@
             box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
         }
 
-        /* Kolom breedtes voor scherm */
         .col-compact {
             white-space: nowrap;
             min-width: 120px;
@@ -56,7 +54,6 @@
             background-color: #f8fafc;
         }
 
-        /* Sticky header fix */
         .sticky-header th {
             position: sticky;
             top: 0;
@@ -65,7 +62,6 @@
             box-shadow: 0 1px 0 0 #334155;
         }
 
-        /* PRINT STYLES */
         @media print {
             aside, header, #loadingIndicator, .no-print {
                 display: none !important;
@@ -120,7 +116,6 @@
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <!-- Sidebar voor Filters -->
     <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-lg shrink-0 overflow-hidden no-print">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center shrink-0">
             <h2 class="font-bold flex items-center gap-2 text-sm tracking-widest uppercase">
@@ -138,7 +133,6 @@
         </div>
     </aside>
 
-    <!-- Hoofdinhoud -->
     <main class="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm shrink-0 z-10 no-print">
             <div class="max-w-full mx-auto flex items-center gap-4">
@@ -189,7 +183,6 @@
             </div>
         </header>
 
-        <!-- Tabel Container -->
         <div class="flex-1 overflow-auto p-4 custom-scrollbar" id="mainContentScroll">
             <div id="welcomeMessage" class="max-w-3xl mx-auto mt-10 bg-white border border-slate-200 p-12 rounded-3xl text-center shadow-sm">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -220,14 +213,22 @@
         let fileLibrary = {}; 
         let rawData = [];
         let allHeaders = [];
-        let visibleHeaders = []; // Nieuw: om onnodige kolommen te verbergen
+        let visibleHeaders = []; 
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
 
         function cleanHeader(h) {
             if (!h) return "";
-            return h.replace(/["\r\n]+/g, ' ').trim();
+            // Verwijder agressief alle witruimte, aanhalingstekens en regeleinden
+            return h.replace(/["\r\n\t]+/g, ' ').trim();
+        }
+
+        // Helper om te checken of een header technisch is (ongeacht spaties/hoofdletters)
+        function isTechnicalHeader(h) {
+            const clean = h.toLowerCase().replace(/[^a-z]/g, '');
+            const technicalList = ['doelsoort', 'lfmd', 'nrmd', 'md'];
+            return technicalList.includes(clean);
         }
 
         function parseCSVAuto(text) {
@@ -304,12 +305,14 @@
             allHeaders = data.headers;
             rawData = data.rows;
 
-            // Filter technische kolommen die we liever niet zien (de eerste 4 vaak in dit format)
-            const technicalKeywords = ['doel-soort', 'lfmd', 'nrmd', 'md'];
-            visibleHeaders = allHeaders.filter(h => !technicalKeywords.includes(h.toLowerCase()));
+            // Verbeterde filtering van technische kolommen
+            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h));
 
             const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
-            filterColumns = visibleHeaders.filter(h => !skipKeywords.some(key => h.toLowerCase().includes(key))).slice(0, 8);
+            filterColumns = visibleHeaders.filter(h => {
+                const cleanH = h.toLowerCase();
+                return !skipKeywords.some(key => cleanH.includes(key));
+            }).slice(0, 8);
             
             activeFilters = {};
             searchTerm = '';
