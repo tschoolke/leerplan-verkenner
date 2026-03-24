@@ -220,6 +220,7 @@
         let fileLibrary = {}; 
         let rawData = [];
         let allHeaders = [];
+        let visibleHeaders = []; // Nieuw: om onnodige kolommen te verbergen
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
@@ -302,14 +303,21 @@
         function applyFileData(data) {
             allHeaders = data.headers;
             rawData = data.rows;
+
+            // Filter technische kolommen die we liever niet zien (de eerste 4 vaak in dit format)
+            const technicalKeywords = ['doel-soort', 'lfmd', 'nrmd', 'md'];
+            visibleHeaders = allHeaders.filter(h => !technicalKeywords.includes(h.toLowerCase()));
+
             const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
-            filterColumns = allHeaders.filter(h => !skipKeywords.some(key => h.toLowerCase().includes(key))).slice(0, 8);
+            filterColumns = visibleHeaders.filter(h => !skipKeywords.some(key => h.toLowerCase().includes(key))).slice(0, 8);
+            
             activeFilters = {};
             searchTerm = '';
             document.getElementById('searchInput').value = '';
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
             document.getElementById('printBtn').classList.remove('hidden');
+            
             setupTableHeaders();
             renderFilters();
             renderTable();
@@ -339,7 +347,7 @@
 
         function setupTableHeaders() {
             const headerRow = document.getElementById('tableHeaderRow');
-            headerRow.innerHTML = allHeaders.map(h => {
+            headerRow.innerHTML = visibleHeaders.map(h => {
                 const isFilterCol = filterColumns.includes(h);
                 const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
                 return `
@@ -436,7 +444,7 @@
                 document.getElementById('tableWrapper').classList.remove('hidden');
                 tbody.innerHTML = filtered.map(item => `
                     <tr>
-                        ${allHeaders.map(h => {
+                        ${visibleHeaders.map(h => {
                             const val = item[h] || '-';
                             const isFilterCol = filterColumns.includes(h);
                             const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
