@@ -95,11 +95,6 @@
                 border: 1px solid #ddd !important;
                 page-break-inside: avoid;
             }
-            .col-compact, .col-content {
-                min-width: 0 !important;
-                max-width: none !important;
-                width: auto !important;
-            }
         }
 
         .loader {
@@ -220,44 +215,43 @@
 
         function cleanHeader(h) {
             if (!h) return "";
-            // Verwijder agressief alle witruimte, aanhalingstekens en regeleinden
+            // Verwijder agressief alle aanhalingstekens en REGELEINDES (cruciaal voor Jaar/fase)
             return h.replace(/["\r\n\t]+/g, ' ').trim();
         }
 
-        // Helper om te checken of een header technisch is (ongeacht spaties/hoofdletters)
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
             const technicalList = ['doelsoort', 'lfmd', 'nrmd', 'md'];
             return technicalList.includes(clean);
         }
 
+        // SLIMMERE CSV PARSER DIE OMGAAT MET ; EN ,
         function parseCSVAuto(text) {
-            const lines = text.split(/\r?\n/);
+            const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length === 0) return [];
             
+            // Bepaal scheidingsteken op basis van eerste regel
             const firstLine = lines[0];
-            const delimiter = firstLine.includes(';') ? ';' : ',';
+            const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
             
-            const rows = [];
-            for (let line of lines) {
-                if (!line.trim()) continue;
-                
-                const row = [];
-                let field = "";
+            return lines.map(line => {
+                const result = [];
+                let cell = '';
                 let inQuotes = false;
-                
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (char === '"') inQuotes = !inQuotes;
-                    else if (char === delimiter && !inQuotes) {
-                        row.push(field.trim());
-                        field = "";
-                    } else field += char;
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        result.push(cell.trim());
+                        cell = '';
+                    } else {
+                        cell += char;
+                    }
                 }
-                row.push(field.trim());
-                rows.push(row);
-            }
-            return rows;
+                result.push(cell.trim());
+                return result;
+            });
         }
 
         async function handleFileSelection() {
@@ -277,7 +271,6 @@
             toggleLoading(true);
             try {
                 const response = await fetch(val);
-                if (!response.ok) throw new Error("Netwerk error");
                 const text = await response.text();
                 processCSVData(text, val);
             } catch (error) {
@@ -305,9 +298,10 @@
             allHeaders = data.headers;
             rawData = data.rows;
 
-            // Verbeterde filtering van technische kolommen
-            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h));
+            // Alleen kolommen die niet technisch zijn tonen
+            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "");
 
+            // Bepaal welke kolommen als filterknopjes in de sidebar komen
             const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
             filterColumns = visibleHeaders.filter(h => {
                 const cleanH = h.toLowerCase();
@@ -352,7 +346,7 @@
             const headerRow = document.getElementById('tableHeaderRow');
             headerRow.innerHTML = visibleHeaders.map(h => {
                 const isFilterCol = filterColumns.includes(h);
-                const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
+                const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld') || h.toLowerCase().includes('toelichting');
                 return `
                     <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isFilterCol ? 'col-compact bg-slate-900' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">
                         ${h}
@@ -450,7 +444,7 @@
                         ${visibleHeaders.map(h => {
                             const val = item[h] || '-';
                             const isFilterCol = filterColumns.includes(h);
-                            const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
+                            const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld') || h.toLowerCase().includes('toelichting');
                             return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isFilterCol ? 'col-compact bg-slate-50/10 font-semibold' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">${val}</td>`;
                         }).join('')}
                     </tr>
