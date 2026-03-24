@@ -30,6 +30,7 @@
             background-color: #2563eb;
             color: white;
             border-color: #2563eb;
+            box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
         .sticky-header th {
@@ -43,26 +44,35 @@
             background-color: #f1f5f9;
         }
 
-        .col-compact { width: 140px; white-space: nowrap; }
-        .col-content { min-width: 400px; }
+        /* Kolom instellingen */
+        .col-fixed-sm { width: 100px; min-width: 100px; }
+        .col-fixed-md { width: 150px; min-width: 150px; }
+        .col-doel { min-width: 450px; }
+
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
 
     <!-- Sidebar voor Filters -->
-    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm">
+    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm shrink-0">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
             <h2 class="font-bold text-sm tracking-widest uppercase flex items-center gap-2">
                 <i class="fas fa-filter text-blue-400"></i> Filters
             </h2>
-            <button onclick="resetFilters()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700">
-                <i class="fas fa-sync-alt"></i>
+            <button onclick="resetFilters()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition-colors">
+                <i class="fas fa-sync-alt mr-1"></i> Reset
             </button>
         </div>
         
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
             <div class="text-center py-10 text-slate-400 italic text-sm">
-                Geen filters beschikbaar.
+                Selecteer een leerplan om filters te laden.
             </div>
         </div>
     </aside>
@@ -71,13 +81,14 @@
     <main class="flex-1 flex flex-col min-w-0">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10">
             <div class="flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 border border-slate-200">
+                <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-all">
                     <i class="fas fa-bars"></i>
                 </button>
                 
-                <div class="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 border border-slate-200">
-                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
-                        <option value="">-- Selecteer Leerplan --</option>
+                <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-1.5 border border-slate-200">
+                    <i class="fas fa-book-open text-slate-400 text-xs"></i>
+                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer pr-4">
+                        <option value="">-- Kies een leerplan --</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-Ned_com_B_S.csv">Nederlands</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-wiskunde_B_S.csv">Wiskunde</option>
                         <option value="local">Eigen CSV uploaden...</option>
@@ -85,31 +96,35 @@
                 </div>
 
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     <input 
                         type="text" 
                         id="searchInput"
                         oninput="handleSearch()"
-                        placeholder="Zoek in leerplan..."
-                        class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-lg outline-none text-sm transition-all"
+                        placeholder="Zoek op tekst, code of domein..."
+                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
                     >
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                <div id="resultCount" class="text-xs font-bold text-blue-600 px-3">0 resultaten</div>
+                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2.5 rounded-xl whitespace-nowrap">
+                    0 resultaten
+                </div>
             </div>
         </header>
 
         <!-- Tabel Sectie -->
         <div class="flex-1 overflow-auto p-4 custom-scrollbar" id="mainContentScroll">
-            <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center">
-                <i class="fas fa-file-csv text-slate-200 text-6xl mb-4"></i>
-                <h2 class="text-xl font-bold text-slate-800">Kies een leerplan om te starten</h2>
-                <p class="text-slate-500 text-sm mt-2">Gebruik het menu hierboven om een standaard leerplan te laden of upload je eigen bestand.</p>
+            <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-sm">
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+                    <i class="fas fa-rocket"></i>
+                </div>
+                <h2 class="text-xl font-bold text-slate-800">Kies een leerplan</h2>
+                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een vak in het menu of sleep een eigen CSV-bestand in dit venster om te beginnen met verkennen.</p>
             </div>
 
-            <div id="tableWrapper" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <table class="w-full text-left border-collapse" id="mainTable">
+            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-w-max">
+                <table class="w-full text-left border-collapse table-fixed" id="mainTable">
                     <thead>
                         <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
                     </thead>
@@ -117,9 +132,10 @@
                 </table>
             </div>
 
-            <div id="emptyState" class="hidden text-center py-20">
-                <i class="fas fa-search text-slate-200 text-5xl mb-4"></i>
-                <h3 class="text-lg font-bold text-slate-700">Geen matches gevonden</h3>
+            <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
+                <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
+                <h3 class="text-xl font-bold text-slate-700">Geen matches gevonden</h3>
+                <p class="text-slate-400 mt-1">Pas je filters of zoekopdracht aan.</p>
             </div>
         </div>
     </main>
@@ -132,19 +148,27 @@
         let activeFilters = {};
         let searchTerm = '';
 
+        // Opschonen van headers (verwijdert regeleindes en quotes)
         function cleanHeader(h) {
-            return h ? h.replace(/["\r\n\t]+/g, ' ').trim() : "";
+            if (!h) return "";
+            return h.replace(/["\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
+        // Bepaalt of een kolom technisch is (niet tonen in tabel)
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
+            // We laten Doelsoort, nrMD etc. alleen in de filters, niet in de tabel
             return ['doelsoort', 'lfmd', 'nrmd', 'md'].includes(clean);
         }
 
+        // De robuuste CSV parser
         function parseCSV(text) {
             const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length === 0) return [];
-            const delimiter = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+            
+            // Auto-detectie van scheidingsteken
+            const firstLine = lines[0];
+            const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
             
             return lines.map(line => {
                 const result = [];
@@ -152,9 +176,14 @@
                 let inQuotes = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (char === '"') inQuotes = !inQuotes;
-                    else if (char === delimiter && !inQuotes) { result.push(cell.trim()); cell = ''; }
-                    else cell += char;
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        result.push(cell.trim());
+                        cell = '';
+                    } else {
+                        cell += char;
+                    }
                 }
                 result.push(cell.trim());
                 return result;
@@ -170,7 +199,7 @@
                 const res = await fetch(val);
                 const text = await res.text();
                 processData(text);
-            } catch (e) { alert("Fout bij laden."); }
+            } catch (e) { alert("Kon bestand niet laden."); }
         }
 
         function handleFileUpload(e) {
@@ -184,48 +213,82 @@
         function processData(text) {
             const rows = parseCSV(text);
             if (rows.length < 2) return;
+            
+            // Headers opschonen
             allHeaders = rows[0].map(h => cleanHeader(h));
+            
+            // Data omzetten naar objecten
             rawData = rows.slice(1).map(row => {
                 const obj = {};
-                allHeaders.forEach((h, i) => obj[h] = row[i] || "");
+                allHeaders.forEach((h, i) => {
+                    obj[h] = row[i] || "";
+                });
                 return obj;
             });
 
+            // Welke kolommen tonen we in de tabel?
             visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "");
-            const filterBlacklist = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
-            filterColumns = visibleHeaders.filter(h => !filterBlacklist.some(word => h.toLowerCase().includes(word))).slice(0, 8);
+
+            // Welke kolommen gebruiken we als filter-knoppen?
+            // Prioriteit: de eerste 8 kolommen die GEEN lange tekst bevatten
+            const filterBlacklist = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat', 'coherentie'];
+            filterColumns = allHeaders.filter(h => {
+                const lower = h.toLowerCase();
+                return !filterBlacklist.some(word => lower.includes(word)) && h !== "";
+            }).slice(0, 9); // We nemen de eerste 9 geschikte kolommen
             
             activeFilters = {};
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
-            setupTable();
+            
+            setupTableHeader();
             renderFilters();
             renderTable();
         }
 
-        function setupTable() {
+        function setupTableHeader() {
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = visibleHeaders.map(h => {
-                const isShort = filterColumns.includes(h);
-                const isLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
-                return `<th class="px-4 py-3 text-[10px] font-bold uppercase border-r border-slate-700 ${isShort ? 'col-compact bg-slate-800' : (isLong ? 'col-content' : 'min-w-[150px]')}">${h}</th>`;
+                const lower = h.toLowerCase();
+                let cls = 'px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 ';
+                
+                if (lower.includes('code') || lower.includes('jaar')) cls += 'col-fixed-sm';
+                else if (lower.includes('domein') || lower.includes('cluster')) cls += 'col-fixed-md';
+                else if (lower.includes('doel')) cls += 'col-doel';
+                else cls += 'w-[150px]';
+
+                return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
+            if (filterColumns.length === 0) {
+                container.innerHTML = '<p class="text-slate-400 text-xs italic">Geen filters beschikbaar voor dit bestand.</p>';
+                return;
+            }
+
             container.innerHTML = filterColumns.map(col => {
-                const values = [...new Set(rawData.map(d => String(d[col]).trim()))].filter(v => v).sort();
+                // Haal unieke waarden op
+                const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
+                    .filter(v => v && v !== "undefined" && v !== "-")
+                    .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
+
+                if (values.length === 0) return '';
+
                 return `
-                    <div class="space-y-2">
-                        <h3 class="text-[10px] font-bold text-slate-500 uppercase">${col}</h3>
-                        <div class="flex flex-wrap gap-1">
-                            ${values.map(v => `
-                                <button onclick="toggleFilter('${col}', '${v}')" 
-                                    class="filter-chip px-2 py-1 text-[10px] border rounded transition-all ${activeFilters[col]?.includes(v) ? 'active' : 'bg-white text-slate-600 border-slate-200'}">
-                                    ${v}
-                                </button>
-                            `).join('')}
+                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3">
+                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${col}</h3>
+                        <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                            ${values.map(v => {
+                                const active = activeFilters[col]?.includes(v);
+                                return `
+                                    <button onclick="toggleFilter('${col}', '${v.replace(/'/g, "\\'")}')" 
+                                        class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg transition-all font-medium ${active ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
+                                        ${v}
+                                    </button>
+                                `;
+                            }).join('')}
                         </div>
                     </div>
                 `;
@@ -249,19 +312,38 @@
         function renderTable() {
             const filtered = rawData.filter(item => {
                 const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
-                const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => !vals.length || vals.includes(item[col]));
+                const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => {
+                    return !vals.length || vals.includes(String(item[col]).trim());
+                });
                 return matchesSearch && matchesFilters;
             });
 
             document.getElementById('resultCount').textContent = `${filtered.length} resultaten`;
             const tbody = document.getElementById('tableBody');
-            document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
             
-            tbody.innerHTML = filtered.map(item => `
-                <tr class="hover:bg-blue-50/50">
-                    ${visibleHeaders.map(h => `<td class="px-4 py-3 border-r border-slate-100 last:border-0">${item[h] || '-'}</td>`).join('')}
-                </tr>
-            `).join('');
+            if (filtered.length === 0) {
+                document.getElementById('emptyState').classList.remove('hidden');
+                document.getElementById('tableWrapper').classList.add('hidden');
+            } else {
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('tableWrapper').classList.remove('hidden');
+                
+                tbody.innerHTML = filtered.map(item => `
+                    <tr class="hover:bg-blue-50/50 transition-colors">
+                        ${visibleHeaders.map(h => {
+                            const val = item[h] || '-';
+                            const isCode = h.toLowerCase().includes('code');
+                            const isDoel = h.toLowerCase().includes('doel');
+                            
+                            let content = val;
+                            if (isCode) content = `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-mono font-bold">${val}</span>`;
+                            if (isDoel) content = `<div class="font-medium text-slate-800 leading-relaxed">${val}</div>`;
+
+                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 align-top">${content}</td>`;
+                        }).join('')}
+                    </tr>
+                `).join('');
+            }
         }
 
         function resetFilters() {
@@ -274,13 +356,15 @@
 
         function toggleSidebar() {
             const s = document.getElementById('sidebar');
-            s.style.width = s.style.width === '0px' ? '320px' : '0px';
+            s.classList.toggle('w-80');
+            s.classList.toggle('w-0');
         }
 
         function resetUI() {
             document.getElementById('welcomeMessage').classList.remove('hidden');
             document.getElementById('tableWrapper').classList.add('hidden');
-            document.getElementById('filterContainer').innerHTML = '';
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('filterContainer').innerHTML = '<div class="text-center py-10 text-slate-400 italic text-sm">Selecteer een leerplan.</div>';
         }
     </script>
 </body>
