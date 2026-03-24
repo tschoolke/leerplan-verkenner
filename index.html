@@ -14,17 +14,9 @@
             background-color: #f1f5f9;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
         .filter-chip.active {
             background-color: #2563eb;
@@ -42,31 +34,31 @@
         }
 
         #mainTable {
-            min-width: 1500px;
+            min-width: 1600px;
             table-layout: fixed;
         }
 
         td, th {
-            padding: 1rem 1.5rem;
+            padding: 1rem 1.25rem;
             vertical-align: top;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            white-space: normal;
         }
 
-        /* Verbeterde kolombreedtes */
-        .col-xs { width: 80px; }
-        .col-small { width: 120px; }
-        .col-medium { width: 220px; }
-        .col-large { width: 500px; }
-        .col-extra { width: 450px; }
+        /* Kolombreedtes */
+        .w-code { width: 130px; }
+        .w-fase { width: 90px; }
+        .w-soort { width: 80px; }
+        .w-domein { width: 200px; }
+        .w-doel { width: 450px; }
+        .w-extra { width: 400px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
-        tr:hover { background-color: #eff6ff !important; }
+        tr:hover { background-color: #f0f7ff !important; }
         
-        .line-clamp-cell {
+        .line-clamp-6 {
             display: -webkit-box;
-            -webkit-line-clamp: 10;
+            -webkit-line-clamp: 6;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -76,14 +68,13 @@
 
     <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-30 shadow-xl shrink-0">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
-            <h2 class="font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+            <h2 class="font-bold text-xs tracking-widest uppercase flex items-center gap-2">
                 <i class="fas fa-filter text-blue-400"></i> Filters
             </h2>
             <button onclick="resetFilters()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700 transition-colors">
-                <i class="fas fa-sync-alt mr-1"></i> Reset
+                Reset
             </button>
         </div>
-        
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
             <div class="text-center py-10 text-slate-400 italic text-sm">Selecteer een leerplan...</div>
         </div>
@@ -108,7 +99,7 @@
 
                 <div class="relative flex-1">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Zoek in alle velden..." class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all">
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Zoek op tekst of code..." class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all">
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
@@ -118,11 +109,9 @@
 
         <div class="flex-1 overflow-hidden flex flex-col p-4">
             <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
-                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
-                    <i class="fas fa-file-csv"></i>
-                </div>
-                <h2 class="text-xl font-bold text-slate-800">Welkom</h2>
-                <p class="text-slate-500 text-sm mt-2">Kies een bestand om de records te bekijken.</p>
+                <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold italic">LP</div>
+                <h2 class="text-xl font-bold text-slate-800">Selecteer een bestand</h2>
+                <p class="text-slate-500 text-sm mt-2 italic">Kies Nederlands of Wiskunde bovenaan om de doelen te bekijken.</p>
             </div>
 
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
@@ -132,8 +121,8 @@
                 </table>
             </div>
 
-            <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
-                <h3 class="text-xl font-bold text-slate-700">Geen resultaten</h3>
+            <div id="emptyState" class="hidden text-center py-32">
+                <h3 class="text-lg font-bold text-slate-400">Geen resultaten gevonden</h3>
             </div>
         </div>
     </main>
@@ -145,16 +134,14 @@
         let activeFilters = {};
         let searchTerm = '';
 
-        const DESIRED_FILTERS = ['doel-soort', 'jaar/fase', 'domein', 'subdomein', 'cluster', 'code'];
+        const FILTER_NAMES = ['soort', 'jaar', 'fase', 'domein', 'subdomein', 'cluster'];
 
-        // ROBUUSTE CSV PARSER (handelt quotes en regeleinden binnen cellen af)
         function parseCSV(text) {
             const rows = [];
             let row = [];
             let cell = '';
             let inQuotes = false;
             
-            // Bepaal scheidingsteken
             const firstLine = text.split('\n')[0];
             const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
 
@@ -163,7 +150,7 @@
                 const nextChar = text[i+1];
 
                 if (char === '"' && inQuotes && nextChar === '"') {
-                    cell += '"'; i++; // Escaped quote
+                    cell += '"'; i++;
                 } else if (char === '"') {
                     inQuotes = !inQuotes;
                 } else if (char === delimiter && !inQuotes) {
@@ -172,17 +159,13 @@
                 } else if ((char === '\n' || char === '\r') && !inQuotes) {
                     if (char === '\r' && nextChar === '\n') i++;
                     row.push(cell.trim());
-                    if (row.length > 1 || row[0] !== "") rows.push(row);
-                    row = [];
-                    cell = '';
+                    if (row.length > 1) rows.push(row);
+                    row = []; cell = '';
                 } else {
                     cell += char;
                 }
             }
-            if (cell || row.length > 0) {
-                row.push(cell.trim());
-                rows.push(row);
-            }
+            if (cell || row.length > 0) { row.push(cell.trim()); rows.push(row); }
             return rows;
         }
 
@@ -209,11 +192,10 @@
             const rows = parseCSV(text);
             if (rows.length < 2) return;
             
-            // Kolommen opschonen
+            // Header opschonen (verwijder quotes en enters)
             allHeaders = rows[0].map(h => h.replace(/["\r\n]+/g, ' ').trim());
-            const headerString = allHeaders.join('|').toLowerCase();
+            const headerCheckString = allHeaders.join('|').toLowerCase().replace(/\s/g, '');
             
-            // Data verwerken en HEADER REGELS FILTEREN
             rawData = rows.slice(1)
                 .map(row => {
                     const obj = {};
@@ -221,16 +203,17 @@
                     return obj;
                 })
                 .filter(item => {
-                    // Check of deze regel stiekem de header is (gebeurt bij samengevoegde CSV's)
-                    const rowString = Object.values(item).join('|').toLowerCase();
-                    if (rowString === headerString) return false;
-                    // Check of de regel niet leeg is
-                    return Object.values(item).some(v => v.length > 0);
+                    // Filter dubbele header regels en lege regels
+                    const rowValues = Object.values(item);
+                    const rowStr = rowValues.join('|').toLowerCase().replace(/\s/g, '');
+                    const isHeader = rowStr === headerCheckString;
+                    const isEmpty = rowValues.every(v => v === "" || v === ";");
+                    return !isHeader && !isEmpty;
                 });
 
             filterColumns = allHeaders.filter(h => {
-                const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
-                return DESIRED_FILTERS.some(f => cleanH.includes(f.replace(/[^a-z\/]/g, '')));
+                const lowerH = h.toLowerCase();
+                return FILTER_NAMES.some(f => lowerH.includes(f));
             });
 
             activeFilters = {};
@@ -248,11 +231,12 @@
                 const lower = h.toLowerCase();
                 let cls = 'bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest border-r border-slate-700';
                 
-                if (lower.includes('code')) cls += ' col-small';
-                else if (lower.includes('soort') || lower.includes('jaar') || lower.includes('fase')) cls += ' col-xs';
-                else if (lower.includes('doel')) cls += ' col-large';
-                else if (lower.includes('voorbeeld') || lower.includes('toelichting')) cls += ' col-extra';
-                else cls += ' col-medium';
+                if (lower.includes('code')) cls += ' w-code';
+                else if (lower.includes('soort')) cls += ' w-soort';
+                else if (lower.includes('jaar') || lower.includes('fase')) cls += ' w-fase';
+                else if (lower.includes('doel')) cls += ' w-doel';
+                else if (lower.includes('voorbeeld') || lower.includes('toelichting') || lower.includes('coherentie')) cls += ' w-extra';
+                else cls += ' w-domein';
 
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
@@ -262,7 +246,7 @@
             const container = document.getElementById('filterContainer');
             container.innerHTML = filterColumns.map(col => {
                 const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
-                    .filter(v => v && v !== "" && v !== "-" && v.toLowerCase() !== col.toLowerCase())
+                    .filter(v => v && v !== "" && v !== "-" && v.length < 50)
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
                 if (values.length === 0) return '';
@@ -270,12 +254,12 @@
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${col}</h3>
-                        <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
+                        <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
                             ${values.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-2.5 py-1.5 text-[10px] border rounded-lg transition-all font-bold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'}">
+                                        class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-semibold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
                                         ${v}
                                     </button>
                                 `;
@@ -325,16 +309,16 @@
                         ${allHeaders.map(h => {
                             const val = item[h] || '';
                             const lowerH = h.toLowerCase();
-                            let style = 'px-6 py-4';
+                            let style = 'px-5 py-4';
                             let content = val;
 
-                            if (lowerH.includes('leerplandoel')) {
-                                style += ' font-bold text-slate-800 leading-snug';
-                            } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
-                                style += ' text-slate-500 italic text-[12px] bg-slate-50/30';
-                                content = `<div class="line-clamp-cell">${val}</div>`;
+                            if (lowerH.includes('doel')) {
+                                style += ' font-semibold text-slate-800 leading-snug';
                             } else if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-mono text-[11px]">${val}</span>`;
+                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-mono text-[11px] font-bold">${val}</span>`;
+                            } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
+                                style += ' text-slate-500 text-[12px]';
+                                content = `<div class="line-clamp-6 italic">${val}</div>`;
                             }
 
                             return `<td class="${style}">${content}</td>`;
