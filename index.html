@@ -224,7 +224,6 @@
             const rows = parseCSV(text);
             if (!rows.length) return;
 
-            // Header opschonen: verwijder quotes, \n, \r en spaties
             allHeaders = rows[0].map(h => h.replace(/["\r\n\t]+/g, '').trim());
             
             rawData = rows.slice(1).map(row => {
@@ -235,7 +234,6 @@
                 return obj;
             }).filter(d => Object.values(d).some(v => v.length > 0));
 
-            // Bepaal welke kolommen als filter getoond worden
             const excludeKeywords = [
                 'leerplandoel', 'toelichting', 'voorbeeld', 'coherentie', 'omgeving',
                 'nrmd', 'md', 'code'
@@ -244,8 +242,6 @@
             filterColumns = allHeaders.filter(h => {
                 const lowH = h.toLowerCase();
                 if (excludeKeywords.some(k => lowH === k || lowH.includes(k))) return false;
-                
-                // Steekproef om te zien of het korte waarden zijn (max 50 tekens gem.)
                 const sample = rawData.slice(0, 20).map(d => String(d[h]).length);
                 const avgLength = sample.reduce((a, b) => a + b, 0) / (sample.length || 1);
                 return avgLength < 50;
@@ -257,8 +253,7 @@
             document.getElementById('printBtn').classList.remove('hidden');
             
             setupTableHeader();
-            renderFilters();
-            renderTable();
+            renderTable(); // Update table eerst, renderFilters wordt daarbinnen aangeroepen voor dynamiek
         }
 
         function setupTableHeader() {
@@ -272,24 +267,46 @@
             }).join('');
         }
 
-        function renderFilters() {
+        function renderFilters(currentFilteredData) {
             const container = document.getElementById('filterContainer');
+            
             container.innerHTML = filterColumns.map(col => {
-                const vals = [...new Set(rawData.map(d => String(d[col]).trim()))]
+                // Toon alleen waarden die voorkomen in de huidige gefilterde set
+                // MAAR: als er al een filter actief is op DEZE kolom, toon dan alle opties van die kolom
+                // die mogelijk zijn op basis van de OVERIGE filters (zodat je meerdere waarden kunt kiezen).
+                
+                const dataToConsider = Object.keys(activeFilters).length > 0 && !(activeFilters[col] && activeFilters[col].length > 0)
+                    ? currentFilteredData 
+                    : rawData.filter(item => {
+                        return Object.entries(activeFilters).every(([c, vals]) => {
+                            if (c === col || !vals || vals.length === 0) return true;
+                            return vals.includes(String(item[c]).trim());
+                        });
+                    });
+
+                const availableVals = [...new Set(dataToConsider.map(d => String(d[col]).trim()))]
+                    .filter(v => v && v !== "-" && v !== "undefined");
+
+                const allPossibleVals = [...new Set(rawData.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "-" && v !== "undefined")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
-                if (vals.length === 0 || vals.length > 60) return '';
+                if (allPossibleVals.length === 0 || allPossibleVals.length > 60) return '';
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
                         <label class="block text-[10px] font-black text-slate-400 uppercase mb-3 tracking-wider">${col}</label>
                         <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
-                            ${vals.map(v => {
-                                const active = activeFilters[col]?.includes(v);
+                            ${allPossibleVals.map(v => {
+                                const isActive = activeFilters[col]?.includes(v);
+                                const isAvailable = availableVals.includes(v);
+                                
+                                // Als de waarde niet beschikbaar is in de huidige set, verbergen we hem of maken we hem inactief
+                                if (!isAvailable && !isActive) return '';
+
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg font-medium transition-all ${active ? 'active' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}">
+                                        class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg font-medium transition-all ${isActive ? 'active' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}">
                                         ${v}
                                     </button>
                                 `;
@@ -305,7 +322,10 @@
             const idx = activeFilters[col].indexOf(val);
             if (idx > -1) activeFilters[col].splice(idx, 1);
             else activeFilters[col].push(val);
-            renderFilters();
+            
+            // Als een categorie leeg is, verwijder de key
+            if (activeFilters[col].length === 0) delete activeFilters[col];
+            
             renderTable();
         }
 
@@ -316,17 +336,16 @@
 
         function renderTable() {
             const filtered = rawData.filter(item => {
-                // Zoekterm check
                 const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
-                
-                // Filter check
                 const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => {
                     if (!vals || vals.length === 0) return true;
                     return vals.includes(String(item[col]).trim());
                 });
-                
                 return matchesSearch && matchesFilters;
             });
+
+            // Update filters op basis van deze nieuwe set
+            renderFilters(filtered);
 
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
@@ -363,7 +382,6 @@
             activeFilters = {};
             document.getElementById('searchInput').value = '';
             searchTerm = '';
-            renderFilters();
             renderTable();
         }
 
