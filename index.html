@@ -34,8 +34,9 @@
         }
 
         #mainTable {
-            min-width: 1600px;
+            min-width: 1200px;
             table-layout: fixed;
+            width: 100%;
         }
 
         td, th {
@@ -46,12 +47,12 @@
         }
 
         /* Kolombreedtes */
-        .w-code { width: 130px; }
-        .w-fase { width: 90px; }
-        .w-soort { width: 80px; }
-        .w-domein { width: 200px; }
-        .w-doel { width: 450px; }
-        .w-extra { width: 400px; }
+        .w-code { width: 110px; }
+        .w-fase { width: 80px; }
+        .w-soort { width: 70px; }
+        .w-domein { width: 180px; }
+        .w-doel { width: auto; }
+        .w-extra { width: 300px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f0f7ff !important; }
@@ -61,6 +62,58 @@
             -webkit-line-clamp: 6;
             -webkit-box-orient: vertical;
             overflow: hidden;
+        }
+
+        /* Print Styles */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 1cm;
+            }
+            body {
+                background: white !important;
+                height: auto !important;
+                overflow: visible !important;
+            }
+            aside, header, #welcomeMessage, button, .no-print {
+                display: none !important;
+            }
+            main {
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                overflow: visible !important;
+            }
+            #tableContainer {
+                border: none !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+            #mainTable {
+                min-width: 100% !important;
+                width: 100% !important;
+                table-layout: auto !important;
+                font-size: 10pt !important;
+            }
+            .sticky-header th {
+                background-color: #f1f5f9 !important;
+                color: black !important;
+                border-bottom: 2px solid #000 !important;
+                position: static !important;
+            }
+            tr {
+                page-break-inside: avoid;
+            }
+            .line-clamp-6 {
+                display: block !important;
+                -webkit-line-clamp: none !important;
+                overflow: visible !important;
+            }
+            .print-header {
+                display: block !important;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
@@ -81,7 +134,7 @@
     </aside>
 
     <main class="flex-1 flex flex-col min-w-0 bg-slate-100">
-        <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10">
+        <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10 no-print">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-all">
                     <i class="fas fa-bars"></i>
@@ -107,11 +160,23 @@
             </div>
         </header>
 
+        <!-- Print header (alleen zichtbaar tijdens afdrukken) -->
+        <div class="hidden print-header p-4">
+            <h1 class="text-2xl font-bold" id="printTitle">Leerplan Verkenner Export</h1>
+            <p class="text-sm text-gray-600" id="printMeta"></p>
+        </div>
+
         <div class="flex-1 overflow-hidden flex flex-col p-4">
             <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold italic">LP</div>
                 <h2 class="text-xl font-bold text-slate-800">Selecteer een bestand</h2>
                 <p class="text-slate-500 text-sm mt-2 italic">Kies een leerplan om de doelen te bekijken.</p>
+            </div>
+
+            <div id="actionHeader" class="mb-4 flex justify-end hidden no-print">
+                <button onclick="window.print()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200 font-bold text-sm transition-all shadow-sm">
+                    <i class="fas fa-print text-blue-500"></i> Afdrukken / PDF
+                </button>
             </div>
 
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
@@ -133,6 +198,7 @@
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
+        let currentFileName = '';
 
         const FILTER_NAMES = ['soort', 'jaar', 'fase', 'domein', 'subdomein', 'cluster'];
 
@@ -170,9 +236,12 @@
         }
 
         async function handleFileSelection() {
-            const val = document.getElementById('fileSelector').value;
+            const selector = document.getElementById('fileSelector');
+            const val = selector.value;
             if (val === "local") { document.getElementById('csvUpload').click(); return; }
             if (!val) return resetUI();
+            
+            currentFileName = selector.options[selector.selectedIndex].text;
             try {
                 const res = await fetch(val);
                 const text = await res.text();
@@ -183,6 +252,7 @@
         function handleFileUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
+            currentFileName = file.name;
             const reader = new FileReader();
             reader.onload = (ev) => processData(ev.target.result);
             reader.readAsText(file);
@@ -216,6 +286,7 @@
 
             activeFilters = {};
             document.getElementById('welcomeMessage').classList.add('hidden');
+            document.getElementById('actionHeader').classList.remove('hidden');
             document.getElementById('tableContainer').classList.remove('hidden');
             
             setupTableHeader();
@@ -237,7 +308,6 @@
             }).join('');
         }
 
-        // Functie om data te filteren op basis van huidige filters
         function getFilteredData(dataToFilter, filters, search) {
             return dataToFilter.filter(item => {
                 const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(search));
@@ -251,19 +321,14 @@
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
-            
-            // Per kolom bepalen we welke waardes nog "mogelijk" zijn
-            // We doen dit door de data te filteren op ALLE filters BEHALVE de huidige kolom
             container.innerHTML = filterColumns.map(col => {
-                // Bereken mogelijke waarden voor deze specifieke filtergroep
                 const otherFilters = { ...activeFilters };
-                delete otherFilters[col]; // Laat deze kolom even buiten beschouwing voor de lijst
+                delete otherFilters[col];
                 
                 const dataForThisFilter = getFilteredData(rawData, otherFilters, searchTerm);
                 const availableValues = [...new Set(dataForThisFilter.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "" && v !== "-" && v.length < 50);
 
-                // Alle unieke waarden in de totale dataset voor de sortering
                 const allValuesForCol = [...new Set(rawData.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "" && v !== "-" && v.length < 50)
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
@@ -277,9 +342,7 @@
                             ${allValuesForCol.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
                                 const isAvailable = availableValues.includes(v);
-                                
-                                if (!isAvailable && !isActive) return ''; // Verberg opties die 0 resultaten zouden geven
-
+                                if (!isAvailable && !isActive) return '';
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
                                         class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-semibold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
@@ -309,11 +372,20 @@
         function updateFiltersAndTable() {
             renderFilters();
             renderTable();
+            updatePrintInfo();
+        }
+
+        function updatePrintInfo() {
+            document.getElementById('printTitle').textContent = `Leerplan: ${currentFileName}`;
+            const filterSummary = Object.entries(activeFilters)
+                .filter(([_, v]) => v.length > 0)
+                .map(([k, v]) => `${k}: ${v.join(', ')}`)
+                .join(' | ');
+            document.getElementById('printMeta').textContent = `Gefilterd op: ${filterSummary || 'Alle doelen'} | Datum: ${new Date().toLocaleDateString()}`;
         }
 
         function renderTable() {
             const filtered = getFilteredData(rawData, activeFilters, searchTerm);
-
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
             
@@ -359,6 +431,7 @@
 
         function resetUI() {
             document.getElementById('welcomeMessage').classList.remove('hidden');
+            document.getElementById('actionHeader').classList.add('hidden');
             document.getElementById('tableContainer').classList.add('hidden');
             document.getElementById('filterContainer').innerHTML = '';
         }
