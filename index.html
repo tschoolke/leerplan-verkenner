@@ -49,7 +49,7 @@
 
         /* Schermbreedtes */
         .col-code { width: 100px; min-width: 100px; }
-        .col-text { min-width: 300px; max-width: 500px; }
+        .col-text { min-width: 300px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #f1f5f9 !important; }
@@ -69,7 +69,7 @@
             overflow: hidden;
         }
 
-        /* PRINT SETTINGS */
+        /* PRINT SETTINGS - Geoptimaliseerd voor volledige tekst */
         @media print {
             @page { size: A4 landscape; margin: 1cm; }
             body { background: white !important; overflow: visible !important; height: auto !important; }
@@ -86,7 +86,7 @@
             #mainTable { 
                 width: 100% !important;
                 min-width: 100% !important;
-                table-layout: fixed !important; 
+                table-layout: auto !important; /* Terug naar auto voor print om ruimte te geven */
                 font-size: 8.5pt !important;
             }
             .sticky-header th { 
@@ -94,14 +94,16 @@
                 color: black !important; 
                 position: static !important; 
                 border-bottom: 2px solid black !important;
+                border-top: 1px solid black !important;
             }
             td { 
                 border-bottom: 0.5pt solid #ccc !important; 
                 page-break-inside: avoid;
             }
-            /* Alles tonen bij printen */
+            /* Alles tonen bij printen: Verwijder de line-clamp */
             .line-clamp-view { 
                 display: block !important; 
+                max-height: none !important;
                 -webkit-line-clamp: none !important; 
                 overflow: visible !important; 
             }
@@ -121,11 +123,11 @@
             </button>
         </div>
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
-            <div class="text-center py-10 text-slate-400 italic text-sm">Geen filters beschikbaar.</div>
+            <div class="text-center py-10 text-slate-400 italic text-sm">Selecteer een leerplan...</div>
         </div>
     </aside>
 
-    <!-- Main -->
+    <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10 no-print flex items-center gap-4">
             <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-all">
@@ -151,7 +153,7 @@
             <div class="flex items-center gap-2">
                 <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-50 px-3 py-2 rounded-lg border border-blue-100">0 records</div>
                 <button id="printBtn" onclick="window.print()" class="hidden bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-sm font-bold flex items-center gap-2">
-                    <i class="fas fa-print"></i> Print
+                    <i class="fas fa-print"></i> Printen
                 </button>
             </div>
         </header>
@@ -160,7 +162,7 @@
             <div id="welcomeMessage" class="max-w-md mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-xl">
                 <i class="fas fa-file-csv text-5xl text-blue-100 mb-4"></i>
                 <h2 class="text-xl font-bold text-slate-800">Welkom</h2>
-                <p class="text-slate-500 text-sm mt-2">Kies een leerplan om te beginnen met filteren.</p>
+                <p class="text-slate-500 text-sm mt-2">Kies een leerplan in de bovenbalk om de filters te laden.</p>
             </div>
 
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 custom-scrollbar">
@@ -171,7 +173,7 @@
             </div>
 
             <div id="emptyState" class="hidden text-center py-20">
-                <p class="text-slate-400">Geen resultaten gevonden voor deze selectie.</p>
+                <p class="text-slate-400 italic">Geen resultaten gevonden voor deze selectie.</p>
             </div>
         </div>
     </main>
@@ -227,18 +229,21 @@
                 return obj;
             }).filter(d => Object.values(d).join('').length > 0);
 
-            // Dynamische filter logica herzien:
-            // We sluiten alleen kolommen uit die overduidelijk lange tekst bevatten.
-            const excludeKeywords = ['leerplandoel', 'toelichting', 'voorbeeld', 'coherentie', 'omgeving'];
+            // Verfijnde filter logica:
+            // Sluit lange tekst EN specifieke code-kolommen uit.
+            const excludeKeywords = [
+                'leerplandoel', 'toelichting', 'voorbeeld', 'coherentie', 'omgeving',
+                'nrmd', 'md', 'code' // Expliciet uitsluiten van nrMD, MD en Code
+            ];
             
             filterColumns = allHeaders.filter(h => {
                 const lowH = h.toLowerCase();
-                if (excludeKeywords.some(k => lowH.includes(k))) return false;
+                if (excludeKeywords.some(k => lowH === k || lowH.includes(k))) return false;
                 
-                // Als de gemiddelde lengte van de tekst in deze kolom > 60 chars is, is het waarschijnlijk geen filter
-                const sample = rawData.slice(0, 10).map(d => String(d[h]).length);
+                // Extra check op tekstlengte om ruis te voorkomen
+                const sample = rawData.slice(0, 15).map(d => String(d[h]).length);
                 const avgLength = sample.reduce((a, b) => a + b, 0) / sample.length;
-                return avgLength < 60;
+                return avgLength < 50;
             });
 
             activeFilters = {};
@@ -255,7 +260,7 @@
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = allHeaders.map(h => {
                 const low = h.toLowerCase();
-                let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300';
+                let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border-r border-slate-700';
                 if (low.includes('code')) cls += ' col-code';
                 if (low.includes('doel') || low.includes('toelichting')) cls += ' col-text';
                 return `<th class="${cls}">${h}</th>`;
@@ -269,11 +274,12 @@
                     .filter(v => v && v !== "-")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
+                // Als een kolom te veel unieke waarden heeft (>60), is het waarschijnlijk geen nuttige filter
                 if (vals.length === 0 || vals.length > 60) return '';
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 shadow-sm">
-                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-3">${col}</label>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase mb-3 tracking-wider">${col}</label>
                         <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar">
                             ${vals.map(v => {
                                 const active = activeFilters[col]?.includes(v);
@@ -330,11 +336,12 @@
                             let content = val;
 
                             if (lowH.includes('code')) {
-                                content = `<span class="font-mono font-bold text-blue-600 text-[10px]">${val}</span>`;
+                                content = `<span class="font-mono font-bold text-blue-600 text-[10px] whitespace-nowrap">${val}</span>`;
                             } else if (lowH.includes('leerplandoel')) {
                                 cls += ' font-semibold text-slate-800';
                             } else if (lowH.includes('voorbeeld') || lowH.includes('toelichting')) {
                                 cls += ' text-slate-500 italic';
+                                // Wrappen in line-clamp voor het scherm, maar wordt ongedaan gemaakt bij printen
                                 content = `<div class="line-clamp-view">${val}</div>`;
                             }
                             return `<td class="${cls}">${content}</td>`;
