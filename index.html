@@ -33,7 +33,6 @@
             box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
-        /* Sticky header fix */
         .sticky-header th {
             position: sticky;
             top: 0;
@@ -42,9 +41,8 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Tabel Breedte & Scroll */
         #mainTable {
-            min-width: 1400px;
+            min-width: 1500px;
             table-layout: fixed;
         }
 
@@ -56,19 +54,26 @@
             white-space: normal;
         }
 
-        /* Kolom breedte definities */
-        .col-small { width: 110px; }
-        .col-medium { width: 200px; }
-        .col-large { width: 450px; }
-        .col-extra { width: 400px; }
+        /* Verbeterde kolombreedtes */
+        .col-xs { width: 80px; }
+        .col-small { width: 120px; }
+        .col-medium { width: 220px; }
+        .col-large { width: 500px; }
+        .col-extra { width: 450px; }
 
         tr:nth-child(even) { background-color: #f8fafc; }
         tr:hover { background-color: #eff6ff !important; }
+        
+        .line-clamp-cell {
+            display: -webkit-box;
+            -webkit-line-clamp: 10;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden text-slate-900">
 
-    <!-- Sidebar voor Filters -->
     <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-30 shadow-xl shrink-0">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
             <h2 class="font-bold text-sm tracking-widest uppercase flex items-center gap-2">
@@ -80,13 +85,10 @@
         </div>
         
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
-            <div class="text-center py-10 text-slate-400 italic text-sm">
-                Kies een leerplan om filters te laden...
-            </div>
+            <div class="text-center py-10 text-slate-400 italic text-sm">Selecteer een leerplan...</div>
         </div>
     </aside>
 
-    <!-- Hoofdpaneel -->
     <main class="flex-1 flex flex-col min-w-0 bg-slate-100">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10">
             <div class="flex items-center gap-4">
@@ -94,7 +96,7 @@
                     <i class="fas fa-bars"></i>
                 </button>
                 
-                <div class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-200">
+                <div class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-200 shrink-0">
                     <i class="fas fa-book-open text-blue-500 text-xs"></i>
                     <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pr-4">
                         <option value="">-- Kies leerplan --</option>
@@ -106,45 +108,32 @@
 
                 <div class="relative flex-1">
                     <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input 
-                        type="text" 
-                        id="searchInput"
-                        oninput="handleSearch()"
-                        placeholder="Zoek in alle velden..."
-                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
-                    >
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Zoek in alle velden..." class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all">
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl min-w-[100px] text-center">
-                    0 records
-                </div>
+                <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl min-w-[100px] text-center">0 records</div>
             </div>
         </header>
 
-        <!-- Tabel Sectie -->
         <div class="flex-1 overflow-hidden flex flex-col p-4">
             <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold">
                     <i class="fas fa-file-csv"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-800">Welkom bij de Verkenner</h2>
-                <p class="text-slate-500 text-sm mt-2">Kies een leerplan uit de lijst of upload je eigen bestand om te beginnen.</p>
+                <h2 class="text-xl font-bold text-slate-800">Welkom</h2>
+                <p class="text-slate-500 text-sm mt-2">Kies een bestand om de records te bekijken.</p>
             </div>
 
-            <!-- Scrollbare container -->
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
                 <table id="mainTable">
-                    <thead>
-                        <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
-                    </thead>
+                    <thead><tr id="tableHeaderRow" class="text-white sticky-header"></tr></thead>
                     <tbody id="tableBody" class="text-[13px] text-slate-700 divide-y divide-slate-100"></tbody>
                 </table>
             </div>
 
             <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
-                <h3 class="text-xl font-bold text-slate-700">Geen records gevonden</h3>
-                <p class="text-slate-400 mt-1">Probeer je filters te resetten of de zoekterm aan te passen.</p>
+                <h3 class="text-xl font-bold text-slate-700">Geen resultaten</h3>
             </div>
         </div>
     </main>
@@ -156,31 +145,45 @@
         let activeFilters = {};
         let searchTerm = '';
 
-        // Definieer welke kolommen we als filters willen aanbieden
         const DESIRED_FILTERS = ['doel-soort', 'jaar/fase', 'domein', 'subdomein', 'cluster', 'code'];
 
+        // ROBUUSTE CSV PARSER (handelt quotes en regeleinden binnen cellen af)
         function parseCSV(text) {
-            const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
-            if (lines.length === 0) return [];
-            const delimiter = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
+            const rows = [];
+            let row = [];
+            let cell = '';
+            let inQuotes = false;
             
-            return lines.map(line => {
-                const result = [];
-                let cell = '';
-                let inQuotes = false;
-                for (let i = 0; i < line.length; i++) {
-                    const char = line[i];
-                    if (char === '"') inQuotes = !inQuotes;
-                    else if (char === delimiter && !inQuotes) {
-                        result.push(cell.trim());
-                        cell = '';
-                    } else {
-                        cell += char;
-                    }
+            // Bepaal scheidingsteken
+            const firstLine = text.split('\n')[0];
+            const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+
+            for (let i = 0; i < text.length; i++) {
+                const char = text[i];
+                const nextChar = text[i+1];
+
+                if (char === '"' && inQuotes && nextChar === '"') {
+                    cell += '"'; i++; // Escaped quote
+                } else if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === delimiter && !inQuotes) {
+                    row.push(cell.trim());
+                    cell = '';
+                } else if ((char === '\n' || char === '\r') && !inQuotes) {
+                    if (char === '\r' && nextChar === '\n') i++;
+                    row.push(cell.trim());
+                    if (row.length > 1 || row[0] !== "") rows.push(row);
+                    row = [];
+                    cell = '';
+                } else {
+                    cell += char;
                 }
-                result.push(cell.trim());
-                return result;
-            });
+            }
+            if (cell || row.length > 0) {
+                row.push(cell.trim());
+                rows.push(row);
+            }
+            return rows;
         }
 
         async function handleFileSelection() {
@@ -206,15 +209,25 @@
             const rows = parseCSV(text);
             if (rows.length < 2) return;
             
-            allHeaders = rows[0].map(h => h.replace(/["\r\n]+/g, '').trim());
+            // Kolommen opschonen
+            allHeaders = rows[0].map(h => h.replace(/["\r\n]+/g, ' ').trim());
+            const headerString = allHeaders.join('|').toLowerCase();
             
-            rawData = rows.slice(1).map(row => {
-                const obj = {};
-                allHeaders.forEach((h, i) => { obj[h] = row[i] || ""; });
-                return obj;
-            });
+            // Data verwerken en HEADER REGELS FILTEREN
+            rawData = rows.slice(1)
+                .map(row => {
+                    const obj = {};
+                    allHeaders.forEach((h, i) => { obj[h] = row[i] || ""; });
+                    return obj;
+                })
+                .filter(item => {
+                    // Check of deze regel stiekem de header is (gebeurt bij samengevoegde CSV's)
+                    const rowString = Object.values(item).join('|').toLowerCase();
+                    if (rowString === headerString) return false;
+                    // Check of de regel niet leeg is
+                    return Object.values(item).some(v => v.length > 0);
+                });
 
-            // Bepaal filterkolommen op basis van namen
             filterColumns = allHeaders.filter(h => {
                 const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
                 return DESIRED_FILTERS.some(f => cleanH.includes(f.replace(/[^a-z\/]/g, '')));
@@ -235,9 +248,10 @@
                 const lower = h.toLowerCase();
                 let cls = 'bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest border-r border-slate-700';
                 
-                if (lower.includes('code') || lower.includes('jaar') || lower.includes('soort')) cls += ' col-small';
+                if (lower.includes('code')) cls += ' col-small';
+                else if (lower.includes('soort') || lower.includes('jaar') || lower.includes('fase')) cls += ' col-xs';
                 else if (lower.includes('doel')) cls += ' col-large';
-                else if (lower.includes('voorbeeld') || lower.includes('toelichting') || lower.includes('woordenschat')) cls += ' col-extra';
+                else if (lower.includes('voorbeeld') || lower.includes('toelichting')) cls += ' col-extra';
                 else cls += ' col-medium';
 
                 return `<th class="${cls}">${h}</th>`;
@@ -246,14 +260,9 @@
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
-            if (filterColumns.length === 0) {
-                container.innerHTML = '<p class="text-xs text-slate-400">Geen filters beschikbaar voor dit bestand.</p>';
-                return;
-            }
-
             container.innerHTML = filterColumns.map(col => {
                 const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
-                    .filter(v => v && v !== "" && v !== "-" && v !== "undefined")
+                    .filter(v => v && v !== "" && v !== "-" && v.toLowerCase() !== col.toLowerCase())
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
                 if (values.length === 0) return '';
@@ -312,23 +321,23 @@
                 document.getElementById('tableContainer').classList.remove('hidden');
                 
                 tbody.innerHTML = filtered.map(item => `
-                    <tr class="border-b border-slate-100">
+                    <tr>
                         ${allHeaders.map(h => {
-                            const val = item[h] || '-';
+                            const val = item[h] || '';
                             const lowerH = h.toLowerCase();
-                            let content = `<span>${val}</span>`;
-                            let cellStyle = 'px-6 py-4';
+                            let style = 'px-6 py-4';
+                            let content = val;
 
                             if (lowerH.includes('leerplandoel')) {
-                                content = `<div class="font-bold text-slate-800 leading-snug">${val}</div>`;
-                            } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting') || lowerH.includes('woordenschat')) {
-                                content = `<div class="text-slate-500 italic text-[12px] leading-relaxed">${val}</div>`;
-                                cellStyle += ' bg-slate-50/50';
+                                style += ' font-bold text-slate-800 leading-snug';
+                            } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
+                                style += ' text-slate-500 italic text-[12px] bg-slate-50/30';
+                                content = `<div class="line-clamp-cell">${val}</div>`;
                             } else if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-md border border-blue-100 font-mono font-bold text-[11px]">${val}</span>`;
+                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded border border-blue-100 font-mono text-[11px]">${val}</span>`;
                             }
 
-                            return `<td class="${cellStyle}">${content}</td>`;
+                            return `<td class="${style}">${content}</td>`;
                         }).join('')}
                     </tr>
                 `).join('');
