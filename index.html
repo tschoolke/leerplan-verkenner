@@ -156,7 +156,13 @@
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl min-w-[100px] text-center">0 records</div>
+                
+                <div class="flex items-center gap-2">
+                    <div id="resultCount" class="text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl min-w-[100px] text-center">0 records</div>
+                    <button id="mainPrintBtn" onclick="window.print()" class="hidden bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
+                        <i class="fas fa-print"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -171,12 +177,6 @@
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold italic">LP</div>
                 <h2 class="text-xl font-bold text-slate-800">Selecteer een bestand</h2>
                 <p class="text-slate-500 text-sm mt-2 italic">Kies een leerplan om de doelen te bekijken.</p>
-            </div>
-
-            <div id="actionHeader" class="mb-4 flex justify-end hidden no-print">
-                <button onclick="window.print()" class="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200 font-bold text-sm transition-all shadow-sm">
-                    <i class="fas fa-print text-blue-500"></i> Afdrukken / PDF
-                </button>
             </div>
 
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
@@ -286,7 +286,7 @@
 
             activeFilters = {};
             document.getElementById('welcomeMessage').classList.add('hidden');
-            document.getElementById('actionHeader').classList.remove('hidden');
+            document.getElementById('mainPrintBtn').classList.remove('hidden');
             document.getElementById('tableContainer').classList.remove('hidden');
             
             setupTableHeader();
@@ -431,7 +431,7 @@
 
         function resetUI() {
             document.getElementById('welcomeMessage').classList.remove('hidden');
-            document.getElementById('actionHeader').classList.add('hidden');
+            document.getElementById('mainPrintBtn').classList.add('hidden');
             document.getElementById('tableContainer').classList.add('hidden');
             document.getElementById('filterContainer').innerHTML = '';
         }
