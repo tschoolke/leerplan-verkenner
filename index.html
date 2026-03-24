@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leerplan Verkenner - Multi-Bestand</title>
+    <title>Leerplan Verkenner - Live Data</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -60,6 +60,18 @@
             z-index: 10;
             background-color: #1e293b;
         }
+
+        /* Loading spinner */
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -92,11 +104,17 @@
                 <!-- Bestand selectie dropdown -->
                 <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-1 border border-slate-200">
                     <i class="fas fa-book-open text-slate-400 text-xs"></i>
-                    <select id="fileSelector" onchange="loadSelectedFile()" class="bg-transparent border-none text-sm font-semibold text-slate-700 outline-none pr-8 py-1.5 cursor-pointer">
+                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent border-none text-sm font-semibold text-slate-700 outline-none pr-8 py-1.5 cursor-pointer">
                         <option value="">-- Kies een leerplan --</option>
-                        <!-- Hier kun je URLs naar je bestanden toevoegen -->
-                        <option value="local">Geüpload bestand...</option>
+                        <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-Ned_com_B_S.csv">Nederlands</option>
+                        <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-wiskunde_B_S.csv">Wiskunde</option>
+                        <option value="local">Eigen bestand uploaden...</option>
                     </select>
+                </div>
+
+                <div id="loadingIndicator" class="hidden">
+                    <div class="loader mr-2"></div>
+                    <span class="text-xs text-slate-400 font-medium italic">Laden...</span>
                 </div>
 
                 <div class="relative flex-1">
@@ -113,7 +131,7 @@
                 <div class="flex items-center gap-3">
                     <label for="csvUpload" class="cursor-pointer bg-slate-600 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
                         <i class="fas fa-plus"></i>
-                        <span>Nieuw bestand</span>
+                        <span>Nieuw</span>
                     </label>
                     <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
                 </div>
@@ -127,14 +145,10 @@
         <div class="flex-1 overflow-auto p-4 custom-scrollbar bg-slate-100/50">
             <div id="welcomeMessage" class="max-w-3xl mx-auto mt-10 bg-white border border-slate-200 p-12 rounded-3xl text-center shadow-sm">
                 <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-cloud-upload-alt text-blue-500 text-3xl"></i>
+                    <i class="fas fa-rocket text-blue-500 text-3xl"></i>
                 </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Leerplan Bibliotheek</h2>
-                <p class="text-slate-500 mb-6">Upload je CSV-bestanden of kies een eerder geladen bestand uit de lijst hierboven.</p>
-                <div class="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-amber-800 text-xs text-left">
-                    <p class="font-bold mb-1"><i class="fas fa-info-circle mr-1"></i> Tip voor later:</p>
-                    Je kunt de URL's van je bestanden direct in de code zetten onder <code>fileSelector</code>. Dan hoef je ze nooit meer handmatig te uploaden.
-                </div>
+                <h2 class="text-2xl font-bold text-slate-800 mb-2">Klaar voor gebruik</h2>
+                <p class="text-slate-500 mb-6">Selecteer hierboven het leerplan <b>Nederlands</b> of <b>Wiskunde</b> om de data direct in te laden van GitHub.</p>
             </div>
 
             <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
@@ -157,7 +171,6 @@
     </main>
 
     <script>
-        // Bibliotheek om geüploade data tijdelijk op te slaan
         let fileLibrary = {}; 
         let currentFileId = null;
         
@@ -173,8 +186,7 @@
         }
 
         function parseCSVAuto(text) {
-            const lines = text.split(/\r?\n/);
-            const firstLine = lines[0] || "";
+            const firstLine = text.split('\n')[0];
             const delimiter = firstLine.includes(';') ? ';' : ',';
             
             const rows = [];
@@ -213,25 +225,60 @@
             return rows;
         }
 
-        // Nieuwe functie om tussen bestanden te schakelen
-        function loadSelectedFile() {
+        async function handleFileSelection() {
             const selector = document.getElementById('fileSelector');
-            const selectedId = selector.value;
+            const val = selector.value;
 
-            if (selectedId === "local") {
+            if (val === "local") {
                 document.getElementById('csvUpload').click();
-                selector.value = currentFileId || "";
                 return;
             }
 
-            if (!selectedId || !fileLibrary[selectedId]) {
+            if (!val) {
                 document.getElementById('welcomeMessage').classList.remove('hidden');
                 document.getElementById('tableWrapper').classList.add('hidden');
                 return;
             }
 
-            const data = fileLibrary[selectedId];
-            currentFileId = selectedId;
+            // Als we de data al hebben, direct laden
+            if (fileLibrary[val]) {
+                applyFileData(fileLibrary[val]);
+                return;
+            }
+
+            // Anders ophalen van de URL
+            toggleLoading(true);
+            try {
+                const response = await fetch(val);
+                if (!response.ok) throw new Error("Bestand kon niet worden opgehaald.");
+                const text = await response.text();
+                processCSVData(text, val);
+            } catch (error) {
+                console.error(error);
+                alert("Er ging iets mis bij het ophalen van het leerplan.");
+            } finally {
+                toggleLoading(false);
+            }
+        }
+
+        function processCSVData(text, fileId) {
+            const rows = parseCSVAuto(text);
+            if (rows.length < 1) return;
+
+            const headers = rows[0].map(h => cleanHeader(h));
+            const processedRows = rows.slice(1).map(rowValues => {
+                const obj = {};
+                headers.forEach((header, index) => {
+                    obj[header] = rowValues[index] ? rowValues[index].trim() : "";
+                });
+                return obj;
+            });
+
+            fileLibrary[fileId] = { headers, rows: processedRows };
+            applyFileData(fileLibrary[fileId]);
+        }
+
+        function applyFileData(data) {
             allHeaders = data.headers;
             rawData = data.rows;
             filterColumns = allHeaders.slice(0, 9);
@@ -251,38 +298,23 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const rows = parseCSVAuto(e.target.result);
-                if (rows.length < 1) return;
-
-                const headers = rows[0].map(h => cleanHeader(h));
-                const processedRows = rows.slice(1).map(rowValues => {
-                    const obj = {};
-                    headers.forEach((header, index) => {
-                        obj[header] = rowValues[index] ? rowValues[index].trim() : "";
-                    });
-                    return obj;
-                });
-
-                // Opslaan in bibliotheek
-                const fileId = file.name;
-                fileLibrary[fileId] = {
-                    headers: headers,
-                    rows: processedRows
-                };
-
-                // Toevoegen aan dropdown als het er nog niet in staat
+                processCSVData(e.target.result, file.name);
+                
+                // Voeg toe aan dropdown
                 const selector = document.getElementById('fileSelector');
-                if (![...selector.options].some(opt => opt.value === fileId)) {
+                if (![...selector.options].some(opt => opt.value === file.name)) {
                     const opt = document.createElement('option');
-                    opt.value = fileId;
-                    opt.textContent = fileId;
-                    selector.insertBefore(opt, selector.options[selector.options.length - 1]);
+                    opt.value = file.name;
+                    opt.textContent = `[Geüpload] ${file.name}`;
+                    selector.add(opt);
+                    selector.value = file.name;
                 }
-
-                selector.value = fileId;
-                loadSelectedFile();
             };
             reader.readAsText(file);
+        }
+
+        function toggleLoading(show) {
+            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
         }
 
         function setupTableHeaders() {
@@ -322,9 +354,7 @@
                 const section = document.createElement('div');
                 section.className = 'bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3';
                 section.innerHTML = `
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">
-                        ${col}
-                    </h3>
+                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${col}</h3>
                     <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
                         ${allUniqueValues.map(val => {
                             const isAvailable = availableValues.includes(val);
