@@ -111,7 +111,7 @@
             <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl font-bold italic">LP</div>
                 <h2 class="text-xl font-bold text-slate-800">Selecteer een bestand</h2>
-                <p class="text-slate-500 text-sm mt-2 italic">Kies Nederlands of Wiskunde bovenaan om de doelen te bekijken.</p>
+                <p class="text-slate-500 text-sm mt-2 italic">Kies een leerplan om de doelen te bekijken.</p>
             </div>
 
             <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
@@ -122,7 +122,7 @@
             </div>
 
             <div id="emptyState" class="hidden text-center py-32">
-                <h3 class="text-lg font-bold text-slate-400">Geen resultaten gevonden</h3>
+                <h3 class="text-lg font-bold text-slate-400">Geen resultaten gevonden voor deze filtercombinatie</h3>
             </div>
         </div>
     </main>
@@ -192,7 +192,6 @@
             const rows = parseCSV(text);
             if (rows.length < 2) return;
             
-            // Header opschonen (verwijder quotes en enters)
             allHeaders = rows[0].map(h => h.replace(/["\r\n]+/g, ' ').trim());
             const headerCheckString = allHeaders.join('|').toLowerCase().replace(/\s/g, '');
             
@@ -203,7 +202,6 @@
                     return obj;
                 })
                 .filter(item => {
-                    // Filter dubbele header regels en lege regels
                     const rowValues = Object.values(item);
                     const rowStr = rowValues.join('|').toLowerCase().replace(/\s/g, '');
                     const isHeader = rowStr === headerCheckString;
@@ -221,8 +219,7 @@
             document.getElementById('tableContainer').classList.remove('hidden');
             
             setupTableHeader();
-            renderFilters();
-            renderTable();
+            updateFiltersAndTable();
         }
 
         function setupTableHeader() {
@@ -230,33 +227,59 @@
             hr.innerHTML = allHeaders.map(h => {
                 const lower = h.toLowerCase();
                 let cls = 'bg-slate-800 text-slate-300 text-[10px] font-bold uppercase tracking-widest border-r border-slate-700';
-                
                 if (lower.includes('code')) cls += ' w-code';
                 else if (lower.includes('soort')) cls += ' w-soort';
                 else if (lower.includes('jaar') || lower.includes('fase')) cls += ' w-fase';
                 else if (lower.includes('doel')) cls += ' w-doel';
                 else if (lower.includes('voorbeeld') || lower.includes('toelichting') || lower.includes('coherentie')) cls += ' w-extra';
                 else cls += ' w-domein';
-
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
 
+        // Functie om data te filteren op basis van huidige filters
+        function getFilteredData(dataToFilter, filters, search) {
+            return dataToFilter.filter(item => {
+                const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(search));
+                const matchesFilters = Object.entries(filters).every(([col, vals]) => {
+                    if (!vals || vals.length === 0) return true;
+                    return vals.includes(String(item[col]).trim());
+                });
+                return matchesSearch && matchesFilters;
+            });
+        }
+
         function renderFilters() {
             const container = document.getElementById('filterContainer');
+            
+            // Per kolom bepalen we welke waardes nog "mogelijk" zijn
+            // We doen dit door de data te filteren op ALLE filters BEHALVE de huidige kolom
             container.innerHTML = filterColumns.map(col => {
-                const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
+                // Bereken mogelijke waarden voor deze specifieke filtergroep
+                const otherFilters = { ...activeFilters };
+                delete otherFilters[col]; // Laat deze kolom even buiten beschouwing voor de lijst
+                
+                const dataForThisFilter = getFilteredData(rawData, otherFilters, searchTerm);
+                const availableValues = [...new Set(dataForThisFilter.map(d => String(d[col]).trim()))]
+                    .filter(v => v && v !== "" && v !== "-" && v.length < 50);
+
+                // Alle unieke waarden in de totale dataset voor de sortering
+                const allValuesForCol = [...new Set(rawData.map(d => String(d[col]).trim()))]
                     .filter(v => v && v !== "" && v !== "-" && v.length < 50)
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true}));
 
-                if (values.length === 0) return '';
+                if (allValuesForCol.length === 0) return '';
 
                 return `
                     <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                         <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${col}</h3>
                         <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar">
-                            ${values.map(v => {
+                            ${allValuesForCol.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
+                                const isAvailable = availableValues.includes(v);
+                                
+                                if (!isAvailable && !isActive) return ''; // Verberg opties die 0 resultaten zouden geven
+
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
                                         class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-semibold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
@@ -275,24 +298,21 @@
             const i = activeFilters[col].indexOf(val);
             if (i > -1) activeFilters[col].splice(i, 1);
             else activeFilters[col].push(val);
-            renderFilters();
-            renderTable();
+            updateFiltersAndTable();
         }
 
         function handleSearch() {
             searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            updateFiltersAndTable();
+        }
+
+        function updateFiltersAndTable() {
+            renderFilters();
             renderTable();
         }
 
         function renderTable() {
-            const filtered = rawData.filter(item => {
-                const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
-                const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => {
-                    if (!vals || vals.length === 0) return true;
-                    return vals.includes(String(item[col]).trim());
-                });
-                return matchesSearch && matchesFilters;
-            });
+            const filtered = getFilteredData(rawData, activeFilters, searchTerm);
 
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
@@ -311,16 +331,12 @@
                             const lowerH = h.toLowerCase();
                             let style = 'px-5 py-4';
                             let content = val;
-
-                            if (lowerH.includes('doel')) {
-                                style += ' font-semibold text-slate-800 leading-snug';
-                            } else if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-mono text-[11px] font-bold">${val}</span>`;
-                            } else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
+                            if (lowerH.includes('doel')) style += ' font-semibold text-slate-800 leading-snug';
+                            else if (lowerH.includes('code')) content = `<span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded border border-blue-100 font-mono text-[11px] font-bold">${val}</span>`;
+                            else if (lowerH.includes('voorbeeld') || lowerH.includes('toelichting')) {
                                 style += ' text-slate-500 text-[12px]';
                                 content = `<div class="line-clamp-6 italic">${val}</div>`;
                             }
-
                             return `<td class="${style}">${content}</td>`;
                         }).join('')}
                     </tr>
@@ -332,8 +348,7 @@
             activeFilters = {};
             document.getElementById('searchInput').value = '';
             searchTerm = '';
-            renderFilters();
-            renderTable();
+            updateFiltersAndTable();
         }
 
         function toggleSidebar() {
