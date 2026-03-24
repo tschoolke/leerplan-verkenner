@@ -44,17 +44,9 @@
             background-color: #f1f5f9;
         }
 
-        /* Kolom instellingen */
         .col-fixed-sm { width: 100px; min-width: 100px; }
-        .col-fixed-md { width: 150px; min-width: 150px; }
+        .col-fixed-md { width: 180px; min-width: 180px; }
         .col-doel { min-width: 450px; }
-
-        .line-clamp-3 {
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -119,8 +111,8 @@
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
                     <i class="fas fa-rocket"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-800">Kies een leerplan</h2>
-                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een vak in het menu of sleep een eigen CSV-bestand in dit venster om te beginnen met verkennen.</p>
+                <h2 class="text-xl font-bold text-slate-800">Welkom terug</h2>
+                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een leerplan om de filters en doelen te bekijken.</p>
             </div>
 
             <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-w-max">
@@ -134,8 +126,8 @@
 
             <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
                 <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-700">Geen matches gevonden</h3>
-                <p class="text-slate-400 mt-1">Pas je filters of zoekopdracht aan.</p>
+                <h3 class="text-xl font-bold text-slate-700">Niets gevonden</h3>
+                <p class="text-slate-400 mt-1">Probeer een andere zoekterm of reset de filters.</p>
             </div>
         </div>
     </main>
@@ -148,27 +140,23 @@
         let activeFilters = {};
         let searchTerm = '';
 
-        // Opschonen van headers (verwijdert regeleindes en quotes)
+        // Zeer agressieve schoonmaak van headers om matching te garanderen
         function cleanHeader(h) {
             if (!h) return "";
+            // Verwijder quotes, nieuwe regels, tabs en overtollige spaties
             return h.replace(/["\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
-        // Bepaalt of een kolom technisch is (niet tonen in tabel)
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
-            // We laten Doelsoort, nrMD etc. alleen in de filters, niet in de tabel
-            return ['doelsoort', 'lfmd', 'nrmd', 'md'].includes(clean);
+            // Deze kolommen tonen we wel in de filters, maar niet dubbel in de tabel
+            return ['lfmd', 'nrmd', 'md', 'doelsoort'].includes(clean);
         }
 
-        // De robuuste CSV parser
         function parseCSV(text) {
             const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length === 0) return [];
-            
-            // Auto-detectie van scheidingsteken
-            const firstLine = lines[0];
-            const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+            const delimiter = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
             
             return lines.map(line => {
                 const result = [];
@@ -176,9 +164,8 @@
                 let inQuotes = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === delimiter && !inQuotes) {
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === delimiter && !inQuotes) {
                         result.push(cell.trim());
                         cell = '';
                     } else {
@@ -194,12 +181,11 @@
             const val = document.getElementById('fileSelector').value;
             if (val === "local") { document.getElementById('csvUpload').click(); return; }
             if (!val) return resetUI();
-
             try {
                 const res = await fetch(val);
                 const text = await res.text();
                 processData(text);
-            } catch (e) { alert("Kon bestand niet laden."); }
+            } catch (e) { console.error(e); }
         }
 
         function handleFileUpload(e) {
@@ -214,10 +200,9 @@
             const rows = parseCSV(text);
             if (rows.length < 2) return;
             
-            // Headers opschonen
+            // Headers opslaan en opschonen
             allHeaders = rows[0].map(h => cleanHeader(h));
             
-            // Data omzetten naar objecten
             rawData = rows.slice(1).map(row => {
                 const obj = {};
                 allHeaders.forEach((h, i) => {
@@ -226,17 +211,16 @@
                 return obj;
             });
 
-            // Welke kolommen tonen we in de tabel?
-            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "");
+            // Tabel kolommen
+            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "" && !h.toLowerCase().includes('voorbeeld') && !h.toLowerCase().includes('toelichting'));
 
-            // Welke kolommen gebruiken we als filter-knoppen?
-            // Prioriteit: de eerste 8 kolommen die GEEN lange tekst bevatten
-            const filterBlacklist = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat', 'coherentie'];
+            // Filter kolommen: we pakken specifiek de kolommen die we willen zien
+            const desiredFilters = ['doel-soort', 'lfmd', 'nrmd', 'md', 'code', 'jaar/fase', 'domein', 'subdomein', 'cluster'];
             filterColumns = allHeaders.filter(h => {
-                const lower = h.toLowerCase();
-                return !filterBlacklist.some(word => lower.includes(word)) && h !== "";
-            }).slice(0, 9); // We nemen de eerste 9 geschikte kolommen
-            
+                const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
+                return desiredFilters.some(f => cleanH.includes(f.replace(/[^a-z\/]/g, '')));
+            });
+
             activeFilters = {};
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
@@ -251,27 +235,18 @@
             hr.innerHTML = visibleHeaders.map(h => {
                 const lower = h.toLowerCase();
                 let cls = 'px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 ';
-                
                 if (lower.includes('code') || lower.includes('jaar')) cls += 'col-fixed-sm';
-                else if (lower.includes('domein') || lower.includes('cluster')) cls += 'col-fixed-md';
+                else if (lower.includes('domein') || lower.includes('cluster') || lower.includes('sub')) cls += 'col-fixed-md';
                 else if (lower.includes('doel')) cls += 'col-doel';
-                else cls += 'w-[150px]';
-
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
-            if (filterColumns.length === 0) {
-                container.innerHTML = '<p class="text-slate-400 text-xs italic">Geen filters beschikbaar voor dit bestand.</p>';
-                return;
-            }
-
             container.innerHTML = filterColumns.map(col => {
-                // Haal unieke waarden op
                 const values = [...new Set(rawData.map(d => String(d[col]).trim()))]
-                    .filter(v => v && v !== "undefined" && v !== "-")
+                    .filter(v => v && v !== "" && v !== "-" && v !== "undefined")
                     .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
 
                 if (values.length === 0) return '';
@@ -279,12 +254,12 @@
                 return `
                     <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3">
                         <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${col}</h3>
-                        <div class="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto custom-scrollbar pr-1">
+                        <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
                             ${values.map(v => {
-                                const active = activeFilters[col]?.includes(v);
+                                const isActive = activeFilters[col]?.includes(v);
                                 return `
-                                    <button onclick="toggleFilter('${col}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg transition-all font-medium ${active ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
+                                    <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
+                                        class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-medium ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
                                         ${v}
                                     </button>
                                 `;
@@ -313,7 +288,8 @@
             const filtered = rawData.filter(item => {
                 const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
                 const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => {
-                    return !vals.length || vals.includes(String(item[col]).trim());
+                    if (!vals || vals.length === 0) return true;
+                    return vals.includes(String(item[col]).trim());
                 });
                 return matchesSearch && matchesFilters;
             });
@@ -334,11 +310,9 @@
                             const val = item[h] || '-';
                             const isCode = h.toLowerCase().includes('code');
                             const isDoel = h.toLowerCase().includes('doel');
-                            
                             let content = val;
                             if (isCode) content = `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-mono font-bold">${val}</span>`;
                             if (isDoel) content = `<div class="font-medium text-slate-800 leading-relaxed">${val}</div>`;
-
                             return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 align-top">${content}</td>`;
                         }).join('')}
                     </tr>
@@ -363,8 +337,7 @@
         function resetUI() {
             document.getElementById('welcomeMessage').classList.remove('hidden');
             document.getElementById('tableWrapper').classList.add('hidden');
-            document.getElementById('emptyState').classList.add('hidden');
-            document.getElementById('filterContainer').innerHTML = '<div class="text-center py-10 text-slate-400 italic text-sm">Selecteer een leerplan.</div>';
+            document.getElementById('filterContainer').innerHTML = '';
         }
     </script>
 </body>
