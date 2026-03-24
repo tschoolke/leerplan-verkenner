@@ -121,36 +121,36 @@
             #mainTable { 
                 width: 100% !important;
                 max-width: 100% !important;
-                table-layout: fixed !important; /* Forceer breedte binnen pagina */
-                font-size: 7pt !important;
-                border: 1px solid #000 !important;
+                table-layout: fixed !important; /* Dwingt browser om niet buiten blad te gaan */
+                font-size: 6.5pt !important;
+                border: 0.5pt solid #000 !important;
             }
 
             .sticky-header th { 
-                background-color: #eee !important; 
+                background-color: #f1f5f9 !important; 
                 color: black !important; 
                 position: static !important; 
-                border-bottom: 1px solid black !important;
+                border: 0.5pt solid black !important;
                 font-weight: bold !important;
-                padding: 4px !important;
+                padding: 2px !important;
+                text-transform: uppercase !important;
             }
 
             td { 
-                border: 1px solid #ddd !important; 
-                padding: 4px !important;
+                border: 0.5pt solid #ccc !important; 
+                padding: 2px !important;
                 word-break: break-word !important;
+                vertical-align: top !important;
             }
 
             /* Kolombreedtes voor print (totaal 100%) */
-            .col-doelsoort { width: 3% !important; min-width: 0 !important; }
-            .col-code { width: 8% !important; min-width: 0 !important; }
-            .col-jaar { width: 5% !important; min-width: 0 !important; }
-            /* De rest van de kolommen verdeelt de resterende 84% automatisch via de browser,
-               of we geven de tekstkolommen een groter aandeel */
+            .col-doelsoort { width: 25px !important; min-width: 25px !important; }
+            .col-code { width: 55px !important; min-width: 55px !important; }
+            .col-jaar { width: 35px !important; min-width: 35px !important; }
             .col-text { width: auto !important; max-width: none !important; }
             
             .line-clamp-view {
-                -webkit-line-clamp: unset !important; /* Toon volledige tekst bij print */
+                -webkit-line-clamp: unset !important; 
                 display: block !important;
             }
         }
