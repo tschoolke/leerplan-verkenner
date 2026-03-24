@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leerplan Verkenner - Live Data</title>
+    <title>Leerplan Verkenner</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -11,47 +11,25 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
         }
 
         .custom-scrollbar::-webkit-scrollbar {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f5f9;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
-            border-radius: 5px;
-            border: 2px solid #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+            border-radius: 4px;
         }
 
         .filter-chip.active {
             background-color: #2563eb;
             color: white;
             border-color: #2563eb;
-            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
-        }
-
-        .col-compact {
-            white-space: nowrap;
-            min-width: 120px;
-        }
-
-        .col-content {
-            min-width: 400px;
-            max-width: 600px;
-            white-space: normal;
-            word-wrap: break-word;
-            vertical-align: top;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f8fafc;
         }
 
         .sticky-header th {
@@ -59,180 +37,114 @@
             top: 0;
             z-index: 10;
             background-color: #1e293b;
-            box-shadow: 0 1px 0 0 #334155;
         }
 
-        @media print {
-            aside, header, #loadingIndicator, .no-print {
-                display: none !important;
-            }
-            body, main, #mainContentScroll {
-                background: white !important;
-                overflow: visible !important;
-                height: auto !important;
-                display: block !important;
-            }
-            #tableWrapper {
-                border: none !important;
-                box-shadow: none !important;
-                display: block !important;
-                width: 100% !important;
-            }
-            table {
-                width: 100% !important;
-                table-layout: auto !important;
-                min-width: 0 !important;
-                border: 1px solid #ddd !important;
-            }
-            th {
-                background-color: #f1f5f9 !important;
-                color: black !important;
-                font-size: 8pt !important;
-                border: 1px solid #ddd !important;
-            }
-            td {
-                font-size: 8pt !important;
-                border: 1px solid #ddd !important;
-                page-break-inside: avoid;
-            }
+        tr:nth-child(even) {
+            background-color: #f1f5f9;
         }
 
-        .loader {
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            animation: spin 1s linear infinite;
-            display: inline-block;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .col-compact { width: 140px; white-space: nowrap; }
+        .col-content { min-width: 400px; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
 
-    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-lg shrink-0 overflow-hidden no-print">
-        <div class="p-5 bg-slate-900 text-white flex justify-between items-center shrink-0">
-            <h2 class="font-bold flex items-center gap-2 text-sm tracking-widest uppercase">
-                <i class="fas fa-filter text-blue-400"></i> Slimme Filters
+    <!-- Sidebar voor Filters -->
+    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm">
+        <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
+            <h2 class="font-bold text-sm tracking-widest uppercase flex items-center gap-2">
+                <i class="fas fa-filter text-blue-400"></i> Filters
             </h2>
-            <button onclick="resetFilters()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded transition-colors uppercase font-bold border border-slate-700">
-                <i class="fas fa-sync-alt mr-1"></i> Reset
+            <button onclick="resetFilters()" class="text-[10px] bg-slate-800 hover:bg-slate-700 px-2 py-1 rounded border border-slate-700">
+                <i class="fas fa-sync-alt"></i>
             </button>
         </div>
         
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
             <div class="text-center py-10 text-slate-400 italic text-sm">
-                Selecteer een leerplan om te beginnen.
+                Geen filters beschikbaar.
             </div>
         </div>
     </aside>
 
-    <main class="flex-1 flex flex-col min-w-0 bg-slate-100 overflow-hidden">
-        <header class="bg-white border-b border-slate-200 p-4 shadow-sm shrink-0 z-10 no-print">
-            <div class="max-w-full mx-auto flex items-center gap-4">
-                <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-colors">
-                    <i class="fas fa-columns"></i>
+    <!-- Hoofdpaneel -->
+    <main class="flex-1 flex flex-col min-w-0">
+        <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10">
+            <div class="flex items-center gap-4">
+                <button onclick="toggleSidebar()" class="p-2 hover:bg-slate-100 rounded-lg text-slate-500 border border-slate-200">
+                    <i class="fas fa-bars"></i>
                 </button>
                 
-                <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-1 border border-slate-200">
-                    <i class="fas fa-book-open text-slate-400 text-xs"></i>
-                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent border-none text-sm font-semibold text-slate-700 outline-none pr-8 py-1.5 cursor-pointer">
-                        <option value="">-- Kies een leerplan --</option>
+                <div class="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 border border-slate-200">
+                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
+                        <option value="">-- Selecteer Leerplan --</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-Ned_com_B_S.csv">Nederlands</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-wiskunde_B_S.csv">Wiskunde</option>
-                        <option value="local">Eigen bestand uploaden...</option>
+                        <option value="local">Eigen CSV uploaden...</option>
                     </select>
                 </div>
 
-                <div id="loadingIndicator" class="hidden">
-                    <div class="loader mr-2"></div>
-                </div>
-
                 <div class="relative flex-1">
-                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
                     <input 
                         type="text" 
                         id="searchInput"
                         oninput="handleSearch()"
-                        placeholder="Zoek in dit leerplan..."
-                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
+                        placeholder="Zoek in leerplan..."
+                        class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-lg outline-none text-sm transition-all"
                     >
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <button onclick="window.print()" id="printBtn" class="hidden bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
-                        <i class="fas fa-print"></i>
-                        <span class="hidden md:inline">Print Selectie</span>
-                    </button>
-                    <label for="csvUpload" class="cursor-pointer bg-slate-600 hover:bg-slate-700 text-white px-4 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2 transition-all shadow-sm">
-                        <i class="fas fa-plus"></i>
-                        <span class="hidden md:inline">Upload</span>
-                    </label>
-                    <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                </div>
-
-                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2.5 rounded-xl whitespace-nowrap">
-                    0 resultaten
-                </div>
+                <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
+                <div id="resultCount" class="text-xs font-bold text-blue-600 px-3">0 resultaten</div>
             </div>
         </header>
 
+        <!-- Tabel Sectie -->
         <div class="flex-1 overflow-auto p-4 custom-scrollbar" id="mainContentScroll">
-            <div id="welcomeMessage" class="max-w-3xl mx-auto mt-10 bg-white border border-slate-200 p-12 rounded-3xl text-center shadow-sm">
-                <div class="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <i class="fas fa-rocket text-blue-500 text-3xl"></i>
-                </div>
-                <h2 class="text-2xl font-bold text-slate-800 mb-2">Welkom bij de Verkenner</h2>
-                <p class="text-slate-500 mb-6">Selecteer een leerplan uit de lijst of upload een eigen CSV-bestand om te filteren.</p>
+            <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center">
+                <i class="fas fa-file-csv text-slate-200 text-6xl mb-4"></i>
+                <h2 class="text-xl font-bold text-slate-800">Kies een leerplan om te starten</h2>
+                <p class="text-slate-500 text-sm mt-2">Gebruik het menu hierboven om een standaard leerplan te laden of upload je eigen bestand.</p>
             </div>
 
-            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 min-w-full inline-block align-top">
-                <table class="w-full text-left border-collapse table-fixed min-w-[1200px]" id="mainTable">
-                    <thead id="tableHead">
-                        <tr class="bg-slate-800 text-white sticky-header" id="tableHeaderRow"></tr>
+            <div id="tableWrapper" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <table class="w-full text-left border-collapse" id="mainTable">
+                    <thead>
+                        <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
                     </thead>
-                    <tbody id="tableBody" class="divide-y divide-slate-200 text-[13px] text-slate-600"></tbody>
+                    <tbody id="tableBody" class="text-[13px] text-slate-600 divide-y divide-slate-100"></tbody>
                 </table>
             </div>
 
-            <div id="emptyState" class="hidden text-center py-24 bg-white rounded-2xl border border-slate-200 w-full">
-                <i class="fas fa-filter text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-800">Geen resultaten</h3>
-                <p class="text-slate-400 mt-2">Probeer een andere zoekterm of filter.</p>
+            <div id="emptyState" class="hidden text-center py-20">
+                <i class="fas fa-search text-slate-200 text-5xl mb-4"></i>
+                <h3 class="text-lg font-bold text-slate-700">Geen matches gevonden</h3>
             </div>
         </div>
     </main>
 
     <script>
-        let fileLibrary = {}; 
         let rawData = [];
         let allHeaders = [];
-        let visibleHeaders = []; 
+        let visibleHeaders = [];
         let filterColumns = [];
         let activeFilters = {};
         let searchTerm = '';
 
         function cleanHeader(h) {
-            if (!h) return "";
-            // Verwijder agressief alle aanhalingstekens en REGELEINDES (cruciaal voor Jaar/fase)
-            return h.replace(/["\r\n\t]+/g, ' ').trim();
+            return h ? h.replace(/["\r\n\t]+/g, ' ').trim() : "";
         }
 
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
-            const technicalList = ['doelsoort', 'lfmd', 'nrmd', 'md'];
-            return technicalList.includes(clean);
+            return ['doelsoort', 'lfmd', 'nrmd', 'md'].includes(clean);
         }
 
-        // SLIMMERE CSV PARSER DIE OMGAAT MET ; EN ,
-        function parseCSVAuto(text) {
+        function parseCSV(text) {
             const lines = text.split(/\r?\n/).filter(l => l.trim() !== "");
             if (lines.length === 0) return [];
-            
-            // Bepaal scheidingsteken op basis van eerste regel
-            const firstLine = lines[0];
-            const delimiter = firstLine.split(';').length > firstLine.split(',').length ? ';' : ',';
+            const delimiter = lines[0].split(';').length > lines[0].split(',').length ? ';' : ',';
             
             return lines.map(line => {
                 const result = [];
@@ -240,14 +152,9 @@
                 let inQuotes = false;
                 for (let i = 0; i < line.length; i++) {
                     const char = line[i];
-                    if (char === '"') {
-                        inQuotes = !inQuotes;
-                    } else if (char === delimiter && !inQuotes) {
-                        result.push(cell.trim());
-                        cell = '';
-                    } else {
-                        cell += char;
-                    }
+                    if (char === '"') inQuotes = !inQuotes;
+                    else if (char === delimiter && !inQuotes) { result.push(cell.trim()); cell = ''; }
+                    else cell += char;
                 }
                 result.push(cell.trim());
                 return result;
@@ -255,162 +162,81 @@
         }
 
         async function handleFileSelection() {
-            const selector = document.getElementById('fileSelector');
-            const val = selector.value;
+            const val = document.getElementById('fileSelector').value;
             if (val === "local") { document.getElementById('csvUpload').click(); return; }
-            if (!val) {
-                document.getElementById('welcomeMessage').classList.remove('hidden');
-                document.getElementById('tableWrapper').classList.add('hidden');
-                document.getElementById('emptyState').classList.add('hidden');
-                document.getElementById('printBtn').classList.add('hidden');
-                return;
-            }
+            if (!val) return resetUI();
 
-            if (fileLibrary[val]) { applyFileData(fileLibrary[val]); return; }
-
-            toggleLoading(true);
             try {
-                const response = await fetch(val);
-                const text = await response.text();
-                processCSVData(text, val);
-            } catch (error) {
-                console.error("Fetch error:", error);
-                alert("Kon het leerplan niet laden.");
-            } finally { toggleLoading(false); }
+                const res = await fetch(val);
+                const text = await res.text();
+                processData(text);
+            } catch (e) { alert("Fout bij laden."); }
         }
 
-        function processCSVData(text, fileId) {
-            const rows = parseCSVAuto(text);
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => processData(ev.target.result);
+            reader.readAsText(file);
+        }
+
+        function processData(text) {
+            const rows = parseCSV(text);
             if (rows.length < 2) return;
-            const headers = rows[0].map(h => cleanHeader(h));
-            const dataRows = rows.slice(1).map(rowValues => {
+            allHeaders = rows[0].map(h => cleanHeader(h));
+            rawData = rows.slice(1).map(row => {
                 const obj = {};
-                headers.forEach((header, index) => {
-                    obj[header] = rowValues[index] || "";
-                });
+                allHeaders.forEach((h, i) => obj[h] = row[i] || "");
                 return obj;
             });
-            fileLibrary[fileId] = { headers, rows: dataRows };
-            applyFileData(fileLibrary[fileId]);
-        }
 
-        function applyFileData(data) {
-            allHeaders = data.headers;
-            rawData = data.rows;
-
-            // Alleen kolommen die niet technisch zijn tonen
             visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "");
-
-            // Bepaal welke kolommen als filterknopjes in de sidebar komen
-            const skipKeywords = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
-            filterColumns = visibleHeaders.filter(h => {
-                const cleanH = h.toLowerCase();
-                return !skipKeywords.some(key => cleanH.includes(key));
-            }).slice(0, 8);
+            const filterBlacklist = ['doel', 'voorbeeld', 'toelichting', 'tekst', 'woordenschat'];
+            filterColumns = visibleHeaders.filter(h => !filterBlacklist.some(word => h.toLowerCase().includes(word))).slice(0, 8);
             
             activeFilters = {};
-            searchTerm = '';
-            document.getElementById('searchInput').value = '';
             document.getElementById('welcomeMessage').classList.add('hidden');
             document.getElementById('tableWrapper').classList.remove('hidden');
-            document.getElementById('printBtn').classList.remove('hidden');
-            
-            setupTableHeaders();
+            setupTable();
             renderFilters();
             renderTable();
         }
 
-        function handleFileUpload(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                processCSVData(e.target.result, file.name);
-                const selector = document.getElementById('fileSelector');
-                if (![...selector.options].some(opt => opt.value === file.name)) {
-                    const opt = document.createElement('option');
-                    opt.value = file.name;
-                    opt.textContent = `[Geüpload] ${file.name}`;
-                    selector.add(opt);
-                    selector.value = file.name;
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        function toggleLoading(show) {
-            document.getElementById('loadingIndicator').classList.toggle('hidden', !show);
-        }
-
-        function setupTableHeaders() {
-            const headerRow = document.getElementById('tableHeaderRow');
-            headerRow.innerHTML = visibleHeaders.map(h => {
-                const isFilterCol = filterColumns.includes(h);
-                const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld') || h.toLowerCase().includes('toelichting');
-                return `
-                    <th class="px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 last:border-0 ${isFilterCol ? 'col-compact bg-slate-900' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">
-                        ${h}
-                    </th>
-                `;
+        function setupTable() {
+            const hr = document.getElementById('tableHeaderRow');
+            hr.innerHTML = visibleHeaders.map(h => {
+                const isShort = filterColumns.includes(h);
+                const isLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld');
+                return `<th class="px-4 py-3 text-[10px] font-bold uppercase border-r border-slate-700 ${isShort ? 'col-compact bg-slate-800' : (isLong ? 'col-content' : 'min-w-[150px]')}">${h}</th>`;
             }).join('');
-        }
-
-        function getAvailableOptions(targetCol) {
-            const filteredDataForThisCol = rawData.filter(item => {
-                return Object.entries(activeFilters).every(([col, values]) => {
-                    if (col === targetCol || !values || values.length === 0) return true;
-                    return values.includes(String(item[col]).trim());
-                });
-            });
-            return [...new Set(filteredDataForThisCol.map(item => String(item[targetCol]).trim()))];
         }
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
-            container.innerHTML = '';
-            filterColumns.forEach(col => {
-                const allUniqueValues = [...new Set(rawData.map(item => String(item[col]).trim()))]
-                    .filter(val => val !== "" && val !== "undefined" && val !== "null")
-                    .sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-                const availableValues = getAvailableOptions(col);
-                if (allUniqueValues.length === 0) return;
-
-                const section = document.createElement('div');
-                section.className = 'bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3';
-                section.innerHTML = `
-                    <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">${col}</h3>
-                    <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto pr-1 custom-scrollbar">
-                        ${allUniqueValues.map(val => {
-                            const isActive = isFilterActive(col, val);
-                            if (!availableValues.includes(val) && !isActive) return '';
-                            return `
-                                <button onclick="toggleFilter('${col}', '${val}')"
-                                    class="filter-chip px-2.5 py-1 text-[10px] rounded-lg border border-slate-200 bg-white text-slate-600 hover:border-blue-300 transition-all font-medium ${isActive ? 'active' : ''}">
-                                    ${val}
+            container.innerHTML = filterColumns.map(col => {
+                const values = [...new Set(rawData.map(d => String(d[col]).trim()))].filter(v => v).sort();
+                return `
+                    <div class="space-y-2">
+                        <h3 class="text-[10px] font-bold text-slate-500 uppercase">${col}</h3>
+                        <div class="flex flex-wrap gap-1">
+                            ${values.map(v => `
+                                <button onclick="toggleFilter('${col}', '${v}')" 
+                                    class="filter-chip px-2 py-1 text-[10px] border rounded transition-all ${activeFilters[col]?.includes(v) ? 'active' : 'bg-white text-slate-600 border-slate-200'}">
+                                    ${v}
                                 </button>
-                            `;
-                        }).join('')}
+                            `).join('')}
+                        </div>
                     </div>
                 `;
-                container.appendChild(section);
-            });
+            }).join('');
         }
-
-        function isFilterActive(col, val) { return activeFilters[col] && activeFilters[col].includes(val); }
 
         function toggleFilter(col, val) {
             if (!activeFilters[col]) activeFilters[col] = [];
-            const idx = activeFilters[col].indexOf(val);
-            if (idx > -1) activeFilters[col].splice(idx, 1);
+            const i = activeFilters[col].indexOf(val);
+            if (i > -1) activeFilters[col].splice(i, 1);
             else activeFilters[col].push(val);
-            renderFilters();
-            renderTable();
-        }
-
-        function resetFilters() {
-            activeFilters = {};
-            document.getElementById('searchInput').value = '';
-            searchTerm = '';
             renderFilters();
             renderTable();
         }
@@ -421,41 +247,40 @@
         }
 
         function renderTable() {
-            const tbody = document.getElementById('tableBody');
             const filtered = rawData.filter(item => {
-                const matchesSearch = Object.values(item).some(val => String(val).toLowerCase().includes(searchTerm));
-                const matchesFilters = Object.entries(activeFilters).every(([col, values]) => {
-                    if (!values || values.length === 0) return true;
-                    return values.includes(String(item[col]).trim());
-                });
+                const matchesSearch = Object.values(item).some(v => String(v).toLowerCase().includes(searchTerm));
+                const matchesFilters = Object.entries(activeFilters).every(([col, vals]) => !vals.length || vals.includes(item[col]));
                 return matchesSearch && matchesFilters;
             });
 
             document.getElementById('resultCount').textContent = `${filtered.length} resultaten`;
-            if (filtered.length === 0 && rawData.length > 0) {
-                tbody.innerHTML = '';
-                document.getElementById('emptyState').classList.remove('hidden');
-                document.getElementById('tableWrapper').classList.add('hidden');
-            } else {
-                document.getElementById('emptyState').classList.add('hidden');
-                document.getElementById('tableWrapper').classList.remove('hidden');
-                tbody.innerHTML = filtered.map(item => `
-                    <tr>
-                        ${visibleHeaders.map(h => {
-                            const val = item[h] || '-';
-                            const isFilterCol = filterColumns.includes(h);
-                            const isVeryLong = h.toLowerCase().includes('doel') || h.toLowerCase().includes('voorbeeld') || h.toLowerCase().includes('toelichting');
-                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 ${isFilterCol ? 'col-compact bg-slate-50/10 font-semibold' : (isVeryLong ? 'col-content' : 'min-w-[150px]')}">${val}</td>`;
-                        }).join('')}
-                    </tr>
-                `).join('');
-            }
+            const tbody = document.getElementById('tableBody');
+            document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
+            
+            tbody.innerHTML = filtered.map(item => `
+                <tr class="hover:bg-blue-50/50">
+                    ${visibleHeaders.map(h => `<td class="px-4 py-3 border-r border-slate-100 last:border-0">${item[h] || '-'}</td>`).join('')}
+                </tr>
+            `).join('');
+        }
+
+        function resetFilters() {
+            activeFilters = {};
+            document.getElementById('searchInput').value = '';
+            searchTerm = '';
+            renderFilters();
+            renderTable();
         }
 
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('w-80');
-            sidebar.classList.toggle('w-0');
+            const s = document.getElementById('sidebar');
+            s.style.width = s.style.width === '0px' ? '320px' : '0px';
+        }
+
+        function resetUI() {
+            document.getElementById('welcomeMessage').classList.remove('hidden');
+            document.getElementById('tableWrapper').classList.add('hidden');
+            document.getElementById('filterContainer').innerHTML = '';
         }
     </script>
 </body>
