@@ -11,7 +11,7 @@
         
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
+            background-color: #f1f5f9;
         }
 
         .custom-scrollbar::-webkit-scrollbar {
@@ -33,30 +33,41 @@
             box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
         }
 
+        /* Sticky header fix */
         .sticky-header th {
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 20;
             background-color: #1e293b;
+            box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
         }
+
+        /* Tabel cellen styling */
+        td {
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            min-width: 150px; /* Basisbreedte voor kolommen */
+        }
+
+        /* Specifieke breedtes voor belangrijke kolommen */
+        .col-code { width: 130px; min-width: 130px; }
+        .col-fase { width: 90px; min-width: 90px; }
+        .col-wide { min-width: 400px; width: 500px; } /* Voor doelen en extra info */
 
         tr:nth-child(even) {
             background-color: #f8fafc;
         }
 
-        /* Flexibele breedtes voor leesbaarheid */
-        .col-code { width: 120px; min-width: 120px; }
-        .col-fase { width: 80px; min-width: 80px; }
-        .col-standard { width: 180px; min-width: 180px; }
-        .col-text { min-width: 400px; } /* Voor doelen en voorbeelden */
-
-        td { vertical-align: top; }
+        tr:hover {
+            background-color: #eff6ff !important;
+        }
     </style>
 </head>
-<body class="h-screen flex overflow-hidden">
+<body class="h-screen flex overflow-hidden text-slate-900">
 
     <!-- Sidebar voor Filters -->
-    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm shrink-0">
+    <aside id="sidebar" class="w-80 bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-30 shadow-xl shrink-0">
         <div class="p-5 bg-slate-900 text-white flex justify-between items-center">
             <h2 class="font-bold text-sm tracking-widest uppercase flex items-center gap-2">
                 <i class="fas fa-filter text-blue-400"></i> Filters
@@ -68,23 +79,23 @@
         
         <div id="filterContainer" class="flex-1 overflow-y-auto p-5 space-y-6 custom-scrollbar">
             <div class="text-center py-10 text-slate-400 italic text-sm">
-                Selecteer een leerplan om filters te laden.
+                Selecteer eerst een leerplan...
             </div>
         </div>
     </aside>
 
     <!-- Hoofdpaneel -->
-    <main class="flex-1 flex flex-col min-w-0">
+    <main class="flex-1 flex flex-col min-w-0 bg-slate-100">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-10">
             <div class="flex items-center gap-4">
                 <button onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-all">
                     <i class="fas fa-bars"></i>
                 </button>
                 
-                <div class="flex items-center gap-2 bg-slate-100 rounded-xl px-3 py-1.5 border border-slate-200">
-                    <i class="fas fa-book-open text-slate-400 text-xs"></i>
-                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer pr-4">
-                        <option value="">-- Kies een leerplan --</option>
+                <div class="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-1.5 border border-slate-200">
+                    <i class="fas fa-book-open text-blue-500 text-xs"></i>
+                    <select id="fileSelector" onchange="handleFileSelection()" class="bg-transparent text-sm font-bold text-slate-700 outline-none cursor-pointer pr-4">
+                        <option value="">-- Kies leerplan --</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-Ned_com_B_S.csv">Nederlands</option>
                         <option value="https://raw.githubusercontent.com/tschoolke/leerplan-verkenner/refs/heads/main/LP-wiskunde_B_S.csv">Wiskunde</option>
                         <option value="local">Eigen CSV uploaden...</option>
@@ -98,40 +109,41 @@
                         id="searchInput"
                         oninput="handleSearch()"
                         placeholder="Zoek in alle kolommen..."
-                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
+                        class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all shadow-sm"
                     >
                 </div>
 
                 <input type="file" id="csvUpload" accept=".csv" class="hidden" onchange="handleFileUpload(event)">
-                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-600 bg-blue-50 border border-blue-100 px-4 py-2.5 rounded-xl whitespace-nowrap">
+                <div id="resultCount" class="hidden sm:block text-xs font-bold text-blue-700 bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl whitespace-nowrap shadow-sm">
                     0 resultaten
                 </div>
             </div>
         </header>
 
         <!-- Tabel Sectie -->
-        <div class="flex-1 overflow-auto p-4 custom-scrollbar" id="mainContentScroll">
-            <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-sm">
+        <div class="flex-1 overflow-hidden flex flex-col p-4">
+            <div id="welcomeMessage" class="max-w-xl mx-auto mt-20 text-center bg-white p-10 rounded-3xl border border-slate-200 shadow-lg">
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-                    <i class="fas fa-rocket"></i>
+                    <i class="fas fa-table"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-800">Leerplan Dashboard</h2>
-                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Kies een vak om de volledige leerplaninformatie te bekijken.</p>
+                <h2 class="text-xl font-bold text-slate-800">Klaar om te verkennen?</h2>
+                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een bestand om de volledige inhoud en filters te laden.</p>
             </div>
 
-            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse" id="mainTable">
+            <!-- Scrollbare container voor de tabel -->
+            <div id="tableContainer" class="hidden flex-1 overflow-auto bg-white rounded-2xl shadow-lg border border-slate-200 custom-scrollbar">
+                <table class="w-full text-left border-collapse table-auto" id="mainTable">
                     <thead>
                         <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
                     </thead>
-                    <tbody id="tableBody" class="text-[13px] text-slate-600 divide-y divide-slate-100"></tbody>
+                    <tbody id="tableBody" class="text-[13px] text-slate-700 divide-y divide-slate-100"></tbody>
                 </table>
             </div>
 
             <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
                 <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-700">Geen matches</h3>
-                <p class="text-slate-400 mt-1">Probeer je filters te verbreden.</p>
+                <h3 class="text-xl font-bold text-slate-700">Geen resultaten gevonden</h3>
+                <p class="text-slate-400 mt-1">Verander je zoekterm of deactiveer enkele filters.</p>
             </div>
         </div>
     </main>
@@ -149,11 +161,9 @@
             return h.replace(/["\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
-        // We tonen nu ELKE kolom die niet puur technisch is (zoals LfMD codes die al in de filters zitten)
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
-            // Alleen de echte duplicaten van filters verbergen we in de tabel als ze geen meerwaarde bieden
-            // Maar voor de zekerheid laten we bijna alles nu zien zodat de gebruiker de volledige record heeft.
+            // We verbergen enkel de absolute ruwe codes die dubbelop zijn met de filters
             return ['lfmd', 'nrmd', 'md'].includes(clean);
         }
 
@@ -214,11 +224,11 @@
                 return obj;
             });
 
-            // Toon ALLE kolommen behalve de puur technische codes
+            // Toon ALLE kolommen behalve technische ID's
             visibleHeaders = allHeaders.filter(h => h !== "" && !isTechnicalHeader(h));
 
-            // Filters instellen (de kolommen om op te klikken in de zijbalk)
-            const desiredFilters = ['doel-soort', 'code', 'jaar/fase', 'domein', 'subdomein', 'cluster'];
+            // Bepaal welke kolommen als filters in de zijbalk komen
+            const desiredFilters = ['doel-soort', 'jaar/fase', 'domein', 'subdomein', 'cluster', 'code'];
             filterColumns = allHeaders.filter(h => {
                 const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
                 return desiredFilters.some(f => cleanH.includes(f.replace(/[^a-z\/]/g, '')));
@@ -226,7 +236,7 @@
 
             activeFilters = {};
             document.getElementById('welcomeMessage').classList.add('hidden');
-            document.getElementById('tableWrapper').classList.remove('hidden');
+            document.getElementById('tableContainer').classList.remove('hidden');
             
             setupTableHeader();
             renderFilters();
@@ -237,13 +247,12 @@
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = visibleHeaders.map(h => {
                 const lower = h.toLowerCase();
-                let cls = 'px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 whitespace-nowrap ';
+                let cls = 'px-6 py-4 text-[11px] font-bold uppercase tracking-wider border-r border-slate-700 whitespace-nowrap ';
                 
                 if (lower.includes('code')) cls += 'col-code';
                 else if (lower.includes('jaar')) cls += 'col-fase';
-                else if (lower.includes('doel') || lower.includes('voorbeelden') || lower.includes('toelichting') || lower.includes('woordenschat')) cls += 'col-text';
-                else cls += 'col-standard';
-
+                else if (lower.includes('doel') || lower.includes('voorbeelden') || lower.includes('toelichting')) cls += 'col-wide';
+                
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
@@ -258,14 +267,14 @@
                 if (values.length === 0) return '';
 
                 return `
-                    <div class="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-3">
-                        <h3 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">${col}</h3>
-                        <div class="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+                    <div class="bg-slate-50 border border-slate-100 rounded-2xl p-4 space-y-3">
+                        <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${col}</h3>
+                        <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto custom-scrollbar pr-1">
                             ${values.map(v => {
                                 const isActive = activeFilters[col]?.includes(v);
                                 return `
                                     <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-2 py-1 text-[10px] border rounded-lg transition-all font-medium ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'}">
+                                        class="filter-chip px-3 py-1.5 text-[11px] border rounded-xl transition-all font-semibold ${isActive ? 'active' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-400 hover:text-blue-600'}">
                                         ${v}
                                     </button>
                                 `;
@@ -305,28 +314,28 @@
             
             if (filtered.length === 0) {
                 document.getElementById('emptyState').classList.remove('hidden');
-                document.getElementById('tableWrapper').classList.add('hidden');
+                document.getElementById('tableContainer').classList.add('hidden');
             } else {
                 document.getElementById('emptyState').classList.add('hidden');
-                document.getElementById('tableWrapper').classList.remove('hidden');
+                document.getElementById('tableContainer').classList.remove('hidden');
                 
                 tbody.innerHTML = filtered.map(item => `
-                    <tr class="hover:bg-blue-50/50 transition-colors">
+                    <tr class="transition-colors border-b border-slate-100">
                         ${visibleHeaders.map(h => {
                             const val = item[h] || '-';
                             const lowerH = h.toLowerCase();
                             
-                            let content = `<div class="leading-relaxed whitespace-pre-wrap">${val}</div>`;
+                            let content = `<div class="whitespace-pre-wrap leading-relaxed py-1">${val}</div>`;
                             
                             if (lowerH.includes('code')) {
-                                content = `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-mono font-bold">${val}</span>`;
+                                content = `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg border border-blue-200 font-mono font-bold text-[11px]">${val}</span>`;
                             } else if (lowerH.includes('leerplandoel')) {
-                                content = `<div class="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">${val}</div>`;
-                            } else if (lowerH.includes('voorbeelden') || lowerH.includes('toelichting')) {
-                                content = `<div class="text-slate-500 italic text-[12px] whitespace-pre-wrap">${val}</div>`;
+                                content = `<div class="font-bold text-slate-900 leading-snug py-1">${val}</div>`;
+                            } else if (lowerH.includes('voorbeelden') || lowerH.includes('toelichting') || lowerH.includes('woordenschat')) {
+                                content = `<div class="text-slate-500 italic text-[12px] bg-slate-50/50 p-2 rounded-lg border border-slate-100">${val}</div>`;
                             }
 
-                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0">${content}</td>`;
+                            return `<td class="px-6 py-5 border-r border-slate-50 last:border-0">${content}</td>`;
                         }).join('')}
                     </tr>
                 `).join('');
@@ -349,7 +358,7 @@
 
         function resetUI() {
             document.getElementById('welcomeMessage').classList.remove('hidden');
-            document.getElementById('tableWrapper').classList.add('hidden');
+            document.getElementById('tableContainer').classList.add('hidden');
             document.getElementById('filterContainer').innerHTML = '';
         }
     </script>
