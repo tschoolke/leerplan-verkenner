@@ -41,12 +41,16 @@
         }
 
         tr:nth-child(even) {
-            background-color: #f1f5f9;
+            background-color: #f8fafc;
         }
 
-        .col-fixed-sm { width: 100px; min-width: 100px; }
-        .col-fixed-md { width: 180px; min-width: 180px; }
-        .col-doel { min-width: 450px; }
+        /* Flexibele breedtes voor leesbaarheid */
+        .col-code { width: 120px; min-width: 120px; }
+        .col-fase { width: 80px; min-width: 80px; }
+        .col-standard { width: 180px; min-width: 180px; }
+        .col-text { min-width: 400px; } /* Voor doelen en voorbeelden */
+
+        td { vertical-align: top; }
     </style>
 </head>
 <body class="h-screen flex overflow-hidden">
@@ -93,7 +97,7 @@
                         type="text" 
                         id="searchInput"
                         oninput="handleSearch()"
-                        placeholder="Zoek op tekst, code of domein..."
+                        placeholder="Zoek in alle kolommen..."
                         class="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 focus:bg-white focus:ring-2 focus:ring-blue-500 rounded-xl outline-none text-sm transition-all"
                     >
                 </div>
@@ -111,12 +115,12 @@
                 <div class="w-16 h-16 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
                     <i class="fas fa-rocket"></i>
                 </div>
-                <h2 class="text-xl font-bold text-slate-800">Welkom terug</h2>
-                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Selecteer een leerplan om de filters en doelen te bekijken.</p>
+                <h2 class="text-xl font-bold text-slate-800">Leerplan Dashboard</h2>
+                <p class="text-slate-500 text-sm mt-2 leading-relaxed">Kies een vak om de volledige leerplaninformatie te bekijken.</p>
             </div>
 
-            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden min-w-max">
-                <table class="w-full text-left border-collapse table-fixed" id="mainTable">
+            <div id="tableWrapper" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left border-collapse" id="mainTable">
                     <thead>
                         <tr id="tableHeaderRow" class="text-white sticky-header"></tr>
                     </thead>
@@ -126,8 +130,8 @@
 
             <div id="emptyState" class="hidden text-center py-32 bg-white rounded-2xl border border-dashed border-slate-300">
                 <i class="fas fa-search text-slate-200 text-6xl mb-4"></i>
-                <h3 class="text-xl font-bold text-slate-700">Niets gevonden</h3>
-                <p class="text-slate-400 mt-1">Probeer een andere zoekterm of reset de filters.</p>
+                <h3 class="text-xl font-bold text-slate-700">Geen matches</h3>
+                <p class="text-slate-400 mt-1">Probeer je filters te verbreden.</p>
             </div>
         </div>
     </main>
@@ -140,17 +144,17 @@
         let activeFilters = {};
         let searchTerm = '';
 
-        // Zeer agressieve schoonmaak van headers om matching te garanderen
         function cleanHeader(h) {
             if (!h) return "";
-            // Verwijder quotes, nieuwe regels, tabs en overtollige spaties
             return h.replace(/["\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim();
         }
 
+        // We tonen nu ELKE kolom die niet puur technisch is (zoals LfMD codes die al in de filters zitten)
         function isTechnicalHeader(h) {
             const clean = h.toLowerCase().replace(/[^a-z]/g, '');
-            // Deze kolommen tonen we wel in de filters, maar niet dubbel in de tabel
-            return ['lfmd', 'nrmd', 'md', 'doelsoort'].includes(clean);
+            // Alleen de echte duplicaten van filters verbergen we in de tabel als ze geen meerwaarde bieden
+            // Maar voor de zekerheid laten we bijna alles nu zien zodat de gebruiker de volledige record heeft.
+            return ['lfmd', 'nrmd', 'md'].includes(clean);
         }
 
         function parseCSV(text) {
@@ -200,7 +204,6 @@
             const rows = parseCSV(text);
             if (rows.length < 2) return;
             
-            // Headers opslaan en opschonen
             allHeaders = rows[0].map(h => cleanHeader(h));
             
             rawData = rows.slice(1).map(row => {
@@ -211,11 +214,11 @@
                 return obj;
             });
 
-            // Tabel kolommen
-            visibleHeaders = allHeaders.filter(h => !isTechnicalHeader(h) && h !== "" && !h.toLowerCase().includes('voorbeeld') && !h.toLowerCase().includes('toelichting'));
+            // Toon ALLE kolommen behalve de puur technische codes
+            visibleHeaders = allHeaders.filter(h => h !== "" && !isTechnicalHeader(h));
 
-            // Filter kolommen: we pakken specifiek de kolommen die we willen zien
-            const desiredFilters = ['doel-soort', 'lfmd', 'nrmd', 'md', 'code', 'jaar/fase', 'domein', 'subdomein', 'cluster'];
+            // Filters instellen (de kolommen om op te klikken in de zijbalk)
+            const desiredFilters = ['doel-soort', 'code', 'jaar/fase', 'domein', 'subdomein', 'cluster'];
             filterColumns = allHeaders.filter(h => {
                 const cleanH = h.toLowerCase().replace(/[^a-z\/]/g, '');
                 return desiredFilters.some(f => cleanH.includes(f.replace(/[^a-z\/]/g, '')));
@@ -234,10 +237,13 @@
             const hr = document.getElementById('tableHeaderRow');
             hr.innerHTML = visibleHeaders.map(h => {
                 const lower = h.toLowerCase();
-                let cls = 'px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 ';
-                if (lower.includes('code') || lower.includes('jaar')) cls += 'col-fixed-sm';
-                else if (lower.includes('domein') || lower.includes('cluster') || lower.includes('sub')) cls += 'col-fixed-md';
-                else if (lower.includes('doel')) cls += 'col-doel';
+                let cls = 'px-4 py-4 text-[10px] font-black uppercase tracking-widest border-r border-slate-700 whitespace-nowrap ';
+                
+                if (lower.includes('code')) cls += 'col-code';
+                else if (lower.includes('jaar')) cls += 'col-fase';
+                else if (lower.includes('doel') || lower.includes('voorbeelden') || lower.includes('toelichting') || lower.includes('woordenschat')) cls += 'col-text';
+                else cls += 'col-standard';
+
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
@@ -308,12 +314,19 @@
                     <tr class="hover:bg-blue-50/50 transition-colors">
                         ${visibleHeaders.map(h => {
                             const val = item[h] || '-';
-                            const isCode = h.toLowerCase().includes('code');
-                            const isDoel = h.toLowerCase().includes('doel');
-                            let content = val;
-                            if (isCode) content = `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-mono font-bold">${val}</span>`;
-                            if (isDoel) content = `<div class="font-medium text-slate-800 leading-relaxed">${val}</div>`;
-                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0 align-top">${content}</td>`;
+                            const lowerH = h.toLowerCase();
+                            
+                            let content = `<div class="leading-relaxed whitespace-pre-wrap">${val}</div>`;
+                            
+                            if (lowerH.includes('code')) {
+                                content = `<span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded border border-blue-100 font-mono font-bold">${val}</span>`;
+                            } else if (lowerH.includes('leerplandoel')) {
+                                content = `<div class="font-bold text-slate-800 leading-relaxed whitespace-pre-wrap">${val}</div>`;
+                            } else if (lowerH.includes('voorbeelden') || lowerH.includes('toelichting')) {
+                                content = `<div class="text-slate-500 italic text-[12px] whitespace-pre-wrap">${val}</div>`;
+                            }
+
+                            return `<td class="px-4 py-4 border-r border-slate-100 last:border-0">${content}</td>`;
                         }).join('')}
                     </tr>
                 `).join('');
