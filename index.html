@@ -1,10 +1,20 @@
-
 <!DOCTYPE html>
 <html lang="nl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leerplan Verkenner</title>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XH8600VJ23"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-XH8600VJ23');
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -52,7 +62,6 @@
             white-space: normal;
         }
 
-        /* Scherm-specifieke kolominstellingen */
         .col-doelsoort { 
             width: 35px !important; 
             min-width: 35px !important; 
@@ -84,75 +93,20 @@
             position: relative;
         }
 
-        /* PRINT OPTIMALISATIE */
         @media print {
-            @page { 
-                size: A4 landscape; 
-                margin: 0.5cm; 
-            }
-            
-            body { 
-                background: white !important; 
-                overflow: visible !important; 
-                height: auto !important; 
-                color: black !important;
-            }
-            
-            aside, header, #welcomeMessage, .no-print, #resultCount, #emptyState { 
-                display: none !important; 
-            }
-            
-            main { 
-                padding: 0 !important; 
-                margin: 0 !important; 
-                display: block !important; 
-                overflow: visible !important; 
-                width: 100% !important; 
-            }
-            
-            #tableContainer { 
-                border: none !important; 
-                box-shadow: none !important; 
-                overflow: visible !important; 
-                display: block !important; 
-                height: auto !important; 
-                width: 100% !important;
-            }
-            
-            #mainTable { 
-                width: 100% !important;
-                max-width: 100% !important;
-                table-layout: fixed !important; 
-                font-size: 6.5pt !important;
-                border: 0.5pt solid #000 !important;
-            }
-
-            .sticky-header th { 
-                background-color: #f1f5f9 !important; 
-                color: black !important; 
-                position: static !important; 
-                border: 0.5pt solid black !important;
-                font-weight: bold !important;
-                padding: 2px !important;
-                text-transform: uppercase !important;
-            }
-
-            td { 
-                border: 0.5pt solid #ccc !important; 
-                padding: 2px !important;
-                word-break: break-word !important;
-                vertical-align: top !important;
-            }
-
+            @page { size: A4 landscape; margin: 0.5cm; }
+            body { background: white !important; overflow: visible !important; height: auto !important; color: black !important; }
+            aside, header, #welcomeMessage, .no-print, #resultCount, #emptyState { display: none !important; }
+            main { padding: 0 !important; margin: 0 !important; display: block !important; overflow: visible !important; width: 100% !important; }
+            #tableContainer { border: none !important; box-shadow: none !important; overflow: visible !important; display: block !important; height: auto !important; width: 100% !important; }
+            #mainTable { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; font-size: 6.5pt !important; border: 0.5pt solid #000 !important; }
+            .sticky-header th { background-color: #f1f5f9 !important; color: black !important; position: static !important; border: 0.5pt solid black !important; font-weight: bold !important; padding: 2px !important; text-transform: uppercase !important; }
+            td { border: 0.5pt solid #ccc !important; padding: 2px !important; word-break: break-word !important; vertical-align: top !important; }
             .col-doelsoort { width: 25px !important; min-width: 25px !important; }
             .col-code { width: 55px !important; min-width: 55px !important; }
             .col-jaar { width: 35px !important; min-width: 35px !important; }
             .col-text { width: auto !important; max-width: none !important; }
-            
-            .line-clamp-view {
-                -webkit-line-clamp: unset !important; 
-                display: block !important;
-            }
+            .line-clamp-view { -webkit-line-clamp: unset !important; display: block !important; }
         }
     </style>
 </head>
@@ -176,7 +130,6 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col min-w-0 bg-slate-50 overflow-hidden">
         <header class="bg-white border-b border-slate-200 p-4 shadow-sm z-40 no-print flex items-center gap-4">
-            <!-- Hamburger menu knop met hoge z-index en duidelijke positionering -->
             <button id="menuToggleButton" onclick="toggleSidebar()" class="p-2.5 hover:bg-slate-100 rounded-xl text-slate-500 border border-slate-200 transition-all z-50 bg-white shrink-0">
                 <i class="fas fa-bars"></i>
             </button>
@@ -221,10 +174,10 @@
                         <i class="fas fa-heart text-orange-400"></i> Jouw hulp gevraagd
                     </h3>
                     <p class="text-orange-900/70 text-sm leading-relaxed mb-4">
-                        Deze tool is en blijft volledig <strong>gratis</strong> voor alle leerkrachten. Om de tool te kunnen blijven optimaliseren en verbeteren, vraag ik één kleine wederdienst: <strong>jouw feedback</strong>.
+                        Deze tool is en blijft volledig <strong>gratis</strong> voor alle leerkrachten. Om de tool te kunnen blijven optimaliseren, vraag ik één kleine wederdienst: <strong>jouw feedback</strong>.
                     </p>
                     <p class="text-orange-900/70 text-sm leading-relaxed mb-6">
-                        Mis je een functie? Werkt er iets niet goed? Of heb je een andere suggestie? Deel het met mij via het formulier. Feedback is de motor achter deze tool!
+                        Mis je een functie? Werkt er iets niet goed? Deel het met mij via het formulier.
                     </p>
                     <a href="https://forms.gle/hf8dkRDvapG7oq7h9" target="_blank" class="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-6 rounded-xl transition-all shadow-lg shadow-orange-200 active:scale-95">
                         <i class="fas fa-paper-plane"></i> Feedback geven
@@ -277,6 +230,14 @@
 
         async function handleFileSelection() {
             const val = document.getElementById('fileSelector').value;
+            
+            // ANALYTICS EVENT: Meet welk leerplan wordt geopend
+            if (val) {
+                gtag('event', 'leerplan_selectie', {
+                    'leerplan_naam': val === "local" ? "Lokaal Bestand" : val.split('/').pop()
+                });
+            }
+
             if (val === "local") return document.getElementById('csvUpload').click();
             if (!val) return location.reload();
             try {
@@ -307,10 +268,7 @@
                 return obj;
             }).filter(d => Object.values(d).some(v => v.length > 0));
 
-            const excludeKeywords = [
-                'leerplandoel', 'toelichting', 'voorbeeld', 'coherentie', 'omgeving',
-                'nrmd', 'md', 'code'
-            ];
+            const excludeKeywords = ['leerplandoel', 'toelichting', 'voorbeeld', 'coherentie', 'omgeving', 'nrmd', 'md', 'code'];
             
             filterColumns = allHeaders.filter(h => {
                 const lowH = h.toLowerCase();
@@ -334,19 +292,16 @@
             hr.innerHTML = allHeaders.map((h, index) => {
                 const low = h.toLowerCase();
                 let cls = 'text-[10px] uppercase font-bold tracking-wider bg-slate-800 text-slate-300 border-r border-slate-700';
-                
                 if (index === 0) cls += ' col-doelsoort';
                 else if (low.includes('code')) cls += ' col-code';
                 else if (low.includes('jaar') || low.includes('fase')) cls += ' col-jaar';
                 else if (low.includes('doel') || low.includes('toelichting') || low.includes('voorbeeld')) cls += ' col-text';
-                
                 return `<th class="${cls}">${h}</th>`;
             }).join('');
         }
 
         function renderFilters() {
             const container = document.getElementById('filterContainer');
-            
             container.innerHTML = filterColumns.map(col => {
                 const dataToConsiderForThisFilter = rawData.filter(item => {
                     return Object.entries(activeFilters).every(([c, vals]) => {
@@ -372,13 +327,10 @@
                                 const isActive = activeFilters[col]?.includes(v);
                                 const isAvailable = availableVals.includes(v);
                                 if (!isAvailable && !isActive) return '';
-
-                                return `
-                                    <button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
-                                        class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg font-medium transition-all ${isActive ? 'active' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}">
-                                        ${v}
-                                    </button>
-                                `;
+                                return `<button onclick="toggleFilter('${col.replace(/'/g, "\\'")}', '${v.replace(/'/g, "\\'")}')" 
+                                    class="filter-chip px-2.5 py-1 text-[10px] border rounded-lg font-medium transition-all ${isActive ? 'active' : 'bg-white border-slate-200 text-slate-600 hover:border-blue-300'}">
+                                    ${v}
+                                </button>`;
                             }).join('')}
                         </div>
                     </div>
@@ -411,7 +363,6 @@
             });
 
             renderFilters();
-
             document.getElementById('resultCount').textContent = `${filtered.length} records`;
             const tbody = document.getElementById('tableBody');
             
@@ -427,17 +378,13 @@
                             const lowH = h.toLowerCase();
                             let cls = 'content-cell';
                             let content = val;
-
-                            if (index === 0) {
-                                cls += ' col-doelsoort font-bold text-slate-400 text-[11px]';
-                            } else if (lowH.includes('code')) {
+                            if (index === 0) cls += ' col-doelsoort font-bold text-slate-400 text-[11px]';
+                            else if (lowH.includes('code')) {
                                 cls += ' col-code';
                                 content = `<span class="font-mono font-bold text-blue-600 text-[10px] whitespace-nowrap">${val}</span>`;
-                            } else if (lowH.includes('jaar') || lowH.includes('fase')) {
-                                cls += ' col-jaar';
-                            } else if (lowH.includes('leerplandoel')) {
-                                cls += ' font-semibold text-slate-800 col-text';
-                            } else if (lowH.includes('voorbeeld') || lowH.includes('toelichting')) {
+                            } else if (lowH.includes('jaar') || lowH.includes('fase')) cls += ' col-jaar';
+                            else if (lowH.includes('leerplandoel')) cls += ' font-semibold text-slate-800 col-text';
+                            else if (lowH.includes('voorbeeld') || lowH.includes('toelichting')) {
                                 cls += ' text-slate-500 italic col-text';
                                 content = `<div class="line-clamp-view">${val}</div>`;
                             }
