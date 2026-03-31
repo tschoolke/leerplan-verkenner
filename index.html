@@ -1,17 +1,7 @@
+
 <!DOCTYPE html>
 <html lang="nl">
 <head>
-
-    <!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-XH8600VJ23"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-XH8600VJ23');
-</script>
-   
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leerplan Verkenner</title>
@@ -286,15 +276,6 @@
         }
 
         async function handleFileSelection() {
-    // VOEG DIT TOE:
-    gtag('event', 'leerplan_selectie', {
-        'leerplan_naam': document.getElementById('fileSelector').value
-    });
-
-    const val = document.getElementById('fileSelector').value;
-    // ... rest van de functie
-}
-
             const val = document.getElementById('fileSelector').value;
             if (val === "local") return document.getElementById('csvUpload').click();
             if (!val) return location.reload();
