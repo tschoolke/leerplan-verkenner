@@ -286,6 +286,15 @@
         }
 
         async function handleFileSelection() {
+    // VOEG DIT TOE:
+    gtag('event', 'leerplan_selectie', {
+        'leerplan_naam': document.getElementById('fileSelector').value
+    });
+
+    const val = document.getElementById('fileSelector').value;
+    // ... rest van de functie
+}
+
             const val = document.getElementById('fileSelector').value;
             if (val === "local") return document.getElementById('csvUpload').click();
             if (!val) return location.reload();
